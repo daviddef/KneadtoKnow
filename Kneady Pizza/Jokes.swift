@@ -67,6 +67,22 @@ enum Jokes {
         "What's a pizza's least favourite day? Knead-day. Every day, really.",
         "Why did the mushroom keep getting invited back? He really knew how to top the bill.",
         "Pizza is proof that with a little warmth and time, flat things rise to greatness.",
+        "I asked the waiter if my pizza would be long. He said no — it'll be round.",
+        "I'm reading a thriller about a stolen pizza. There's a lot of cheese at steak.",
+        "Why did the pizza get a promotion? Outstanding crust in the workplace.",
+        "A calzone is just a pizza that got too shy to show its toppings.",
+        "What's a pizza's favourite martial art? Dough-jo karate.",
+        "I asked my pizza for relationship advice. It said 'don't be so saucy.'",
+        "What did the oven say to the pizza? 'You're looking hot today.'",
+        "Why don't pizzas play hide and seek? Good luck hiding that smell.",
+        "What's a pizza's favourite Shakespeare line? 'To brie, or not to brie.'",
+        "Pizza delivery: the only time 'a-round the corner' is genuinely great news.",
+        "I gave my pizza a pep talk and now it's full of pepper-roni-tude.",
+        "What do you call a nervous pizza? A little shy of a full topping.",
+        "My pizza joined a band — it's the one that really brings the slices.",
+        "Why did the calzone blush? It heard what the pizza was stuffed with.",
+        "What's the most honest pizza? One with nothing to hide — extra cheese aside.",
+        "I trusted a pizza with a secret. Big mistake — it folded immediately.",
     ]
 
     static let poolish = [

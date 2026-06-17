@@ -5,6 +5,28 @@ struct StylePickerView: View {
     @ObservedObject var vm: DoughViewModel
     @Environment(\.dismiss) private var dismiss
 
+    /// Styles ordered so those closest to the user's skill level come first.
+    private var orderedStyles: [PizzaStyle] {
+        let lvl = vm.experienceLevel.rawValue
+        return PizzaStyle.all.enumerated().sorted { a, b in
+            let da = abs(a.element.complexity.rawValue - lvl)
+            let db = abs(b.element.complexity.rawValue - lvl)
+            return da == db ? a.offset < b.offset : da < db
+        }.map { $0.element }
+    }
+
+    /// The styles that match the user's level exactly (the suggested group).
+    private var suggestedStyles: [PizzaStyle] { orderedStyles.filter { $0.complexity == vm.experienceLevel } }
+    private var otherStyles: [PizzaStyle] { orderedStyles.filter { $0.complexity != vm.experienceLevel } }
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text)
+            .font(.rounded(12, weight: .bold))
+            .foregroundStyle(Palette.textSoft)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 4)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -19,9 +41,12 @@ struct StylePickerView: View {
                     if vm.hasFavourite {
                         favouriteRow
                     }
-                    ForEach(PizzaStyle.all) { style in
-                        styleRow(style)
+                    if !suggestedStyles.isEmpty {
+                        sectionHeader("SUGGESTED FOR YOU")
+                        ForEach(suggestedStyles) { styleRow($0) }
+                        sectionHeader("MORE STYLES")
                     }
+                    ForEach(otherStyles) { styleRow($0) }
                 }
                 .padding(20)
             }

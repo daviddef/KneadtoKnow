@@ -20,14 +20,34 @@ struct StyleHeroImage: View {
 
     var body: some View {
         if let img = AppImages.named(style.heroImageName) {
-            Image(uiImage: img)
+            let picture = Image(uiImage: img)
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .accessibilityLabel("\(style.name) pizza")
-                .id(style.id)
-                .transition(.opacity)
+
+            Group {
+                if Palette.isVibrant {
+                    // Sticker / fridge-magnet look: white mount, soft shadow, a
+                    // playful tilt.
+                    picture
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(Color.white)
+                        )
+                        .shadow(color: Palette.shadowDark.opacity(0.7), radius: 12, x: 0, y: 8)
+                        .rotationEffect(.degrees(-2))
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 4)
+                } else {
+                    picture
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+            }
+            .accessibilityLabel("\(style.name) pizza")
+            .id(style.id)
+            .transition(.opacity)
         }
     }
 }

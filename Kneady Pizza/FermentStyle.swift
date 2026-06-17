@@ -3,7 +3,7 @@ import Foundation
 /// How the main dough ferment is run — which sets timing, temperature and
 /// (for quick) an accelerated, enriched recipe.
 enum FermentStyle: String, CaseIterable, Identifiable, Codable {
-    case quick      // warm, lots of yeast + honey, ~1–3 h
+    case quick      // warm, lots of yeast + honey, ~1–24 h
     case sameDay    // room temperature, ~12–20 h
     case cold       // fridge, 24–72 h
 
@@ -20,9 +20,9 @@ enum FermentStyle: String, CaseIterable, Identifiable, Codable {
     var blurb: String {
         switch self {
         case .quick:
-            return "In a hurry. Warm water (~40 °C), extra yeast and a little honey force a fast rise in a warm spot — ready in as little as an hour."
+            return "In a hurry. Warm water (~40 °C), extra yeast and a little honey force a fast rise in a warm spot — ready in as little as an hour (slide up for longer)."
         case .sameDay:
-            return "A room-temperature rise over several hours. Simple and reliable."
+            return "A room-temperature rise over several hours (often overnight). Simple and reliable."
         case .cold:
             return "The slow magic: 24–72 h in the fridge. Less yeasty, deeper flavour and a more digestible crust."
         }

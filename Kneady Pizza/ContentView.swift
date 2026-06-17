@@ -14,15 +14,19 @@ enum ActiveSheet: Identifiable {
 
 struct ContentView: View {
     @StateObject private var vm = DoughViewModel()
+    @ObservedObject private var themeManager = ThemeManager.shared
     @State private var activeSheet: ActiveSheet?
     /// Whether the slide-in menu drawer is showing.
     @State private var menuOpen = false
     /// Card keys that are collapsed. Recipe proportions starts collapsed.
     @State private var collapsed: Set<String> = ["proportions"]
+    /// First-run setup, shown until completed.
+    @State private var showOnboarding = !OnboardingStore.completed
     /// The occasional floating popup — a coaching tip or a pizza joke.
     @State private var showJoke = false
     @State private var jokeText = ""
     @State private var popupIsTip = false
+    @State private var popupEmoji = "💡"
     @State private var jokeTicks = 0
     private let jokeTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     /// Keeps "now" live so Start/Ready times track the real clock.
@@ -32,6 +36,7 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             Palette.background.ignoresSafeArea()
+            if Palette.isVibrant { GinghamBackground() }
 
             ScrollViewReader { proxy in
                 VStack(spacing: 0) {
@@ -74,6 +79,7 @@ struct ContentView: View {
             menuOverlay
             jokeOverlay
         }
+        .id(themeManager.theme)   // rebuild the whole tree so a theme switch re-skins fully
         .tint(Palette.accent)
         .preferredColorScheme(nil)
         .onChange(of: vm.input.humourEnabled) { _, _ in
@@ -96,11 +102,20 @@ struct ContentView: View {
             // Tip or joke: both if available, else whichever is on.
             let useTip = (tips && humour) ? Bool.random() : tips
             if useTip {
-                jokeText = Tips.random(simpleMode: vm.input.keepItSimple)
+                // Roughly two in five "tips" are instead a Did-You-Know fact,
+                // biased to the style the baker is making.
+                if Int.random(in: 0..<5) < 2 {
+                    jokeText = Facts.random(styleID: vm.input.style.id)
+                    popupEmoji = "📖"
+                } else {
+                    jokeText = Tips.random(simpleMode: vm.input.keepItSimple)
+                    popupEmoji = "💡"
+                }
                 popupIsTip = true
             } else {
                 jokeText = Jokes.randomGeneral()
                 popupIsTip = false
+                popupEmoji = "🍕"
             }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { showJoke = true }
             Task {
@@ -141,6 +156,9 @@ struct ContentView: View {
                 InfoSheet(topic: topic, humourEnabled: vm.input.humourEnabled)
             }
         }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(vm: vm, onDone: { showOnboarding = false })
+        }
     }
 
     private func showInfo(_ topic: InfoTopic) { activeSheet = .info(topic) }
@@ -165,7 +183,11 @@ struct ContentView: View {
 
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
-                MenuDrawer(vm: vm, onClose: { closeMenu() })
+                MenuDrawer(vm: vm, onClose: { closeMenu() },
+                           onReintro: {
+                               closeMenu()
+                               DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showOnboarding = true }
+                           })
                     .frame(maxWidth: 380)
                     .frame(maxHeight: .infinity)
                     .background(Palette.background.ignoresSafeArea())
@@ -191,7 +213,7 @@ struct ContentView: View {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showJoke = false }
                 } label: {
                     HStack(alignment: .top, spacing: 12) {
-                        Text(popupIsTip ? "💡" : "🍕").font(.system(size: 30))
+                        Text(popupEmoji).font(.system(size: 30))
                         Text(jokeText)
                             .font(.rounded(13, weight: .medium))
                             .foregroundStyle(Palette.text)
@@ -265,32 +287,38 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Total dough")
                         .font(.rounded(12, weight: .medium))
-                        .foregroundStyle(Palette.textSoft)
+                        .foregroundStyle(.white.opacity(0.85))
                     HStack(spacing: 3) {
                         Image(systemName: "clock")
                         Text("\(Scheduler.durationShort(vm.schedule.totalHours)) prep · \(Scheduler.durationShort(vm.schedule.leadHours)) serve")
                     }
                     .font(.rounded(11, weight: .medium))
-                    .foregroundStyle(Palette.sage)
+                    .foregroundStyle(.white.opacity(0.8))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 }
                 Spacer()
                 Text(Units.weight(vm.result.totalWeight, metric: vm.metric))
                     .font(.rounded(18, weight: .bold))
-                    .foregroundStyle(Palette.accent)
-                    .contentTransition(.numericText())
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText(value: vm.result.totalWeight))
+                    .animation(Palette.isVibrant ? .snappy(duration: 0.5) : nil,
+                               value: vm.result.totalWeight)
                 Text("· \(vm.input.ballCount) × \(Units.weight(vm.result.ballWeight, metric: vm.metric))")
                     .font(.rounded(12))
-                    .foregroundStyle(Palette.textSoft)
+                    .foregroundStyle(.white.opacity(0.8))
                     .lineLimit(1)
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.rounded(15, weight: .medium))
-                    .foregroundStyle(Palette.accent.opacity(0.7))
+                    .foregroundStyle(.white.opacity(0.85))
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .softWell(cornerRadius: 16)
+            .padding(.vertical, 11)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Palette.accent)
+            )
+            .shadow(color: Palette.shadowDark, radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 20)
@@ -304,7 +332,7 @@ struct ContentView: View {
     // MARK: 1 — Style
 
     private var styleSection: some View {
-        InputCard(index: 1, title: "Pizza style", info: styleInfo, onInfo: showInfo,
+        InputCard(index: 1, title: SectionCopy.title("Pizza style"), info: styleInfo, onInfo: showInfo,
                   summary: vm.input.style.name,
                   collapsed: collapsed.contains("style"),
                   onToggleCollapse: { toggle("style") }) {
@@ -380,7 +408,7 @@ struct ContentView: View {
     }
 
     private var sizeSection: some View {
-        InputCard(index: 2, title: "Pizzas & size", info: .size, onInfo: showInfo,
+        InputCard(index: 2, title: SectionCopy.title("Pizzas & size"), info: .size, onInfo: showInfo,
                   summary: sizeSummary,
                   collapsed: collapsed.contains("size"),
                   onToggleCollapse: { toggle("size") }) {
@@ -460,7 +488,7 @@ struct ContentView: View {
     // MARK: 3 — Yeast
 
     private var yeastSection: some View {
-        InputCard(index: 3, title: "Yeast or starter", info: .yeast, onInfo: showInfo,
+        InputCard(index: 3, title: SectionCopy.title("Yeast or starter"), info: .yeast, onInfo: showInfo,
                   summary: yeastSummary,
                   collapsed: collapsed.contains("yeast"),
                   onToggleCollapse: { toggle("yeast") }) {
@@ -522,13 +550,13 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
-                } else if vm.input.ferment == .quick {
-                    Text("A Quick dough is too fast for a pre-ferment — it's skipped. Switch to Warm or Cold to use a poolish or biga.")
+                } else if vm.input.yeast.isSourdough {
+                    Text("Sourdough is itself a pre-ferment, so a poolish or biga isn't used here.")
                         .font(.rounded(12))
                         .foregroundStyle(Palette.textSoft)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    Text("Sourdough is itself a pre-ferment, so a poolish or biga isn't used here.")
+                    Text("A \(vm.input.ferment.label) dough is too fast for a pre-ferment — it's skipped. Switch to Warm or Cold to use a poolish or biga.")
                         .font(.rounded(12))
                         .foregroundStyle(Palette.textSoft)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -563,8 +591,17 @@ struct ContentView: View {
         let divisor = 1 + vm.input.hydration + vm.input.salt + vm.input.oil + vm.input.honey
         let flour = divisor > 0 ? r.totalWeight / divisor : 0
 
-        return InputCard(index: 4, title: "Recipe proportions", info: .recipe, onInfo: showInfo,
-                  summary: "\(Int((vm.input.hydration * 100).rounded()))% hydration",
+        // Collapsed summary: every proportion at a glance, not just hydration.
+        func pc(_ v: Double) -> String {
+            let r = (v * 1000).rounded() / 10        // one decimal place
+            return r == r.rounded() ? "\(Int(r))%" : String(format: "%.1f%%", r)
+        }
+        var proportionsSummary = "\(Int((vm.input.hydration * 100).rounded()))% hydration · \(pc(vm.input.salt)) salt"
+        if vm.input.oil   > 0 { proportionsSummary += " · \(pc(vm.input.oil)) oil" }
+        if vm.input.honey > 0 { proportionsSummary += " · \(pc(vm.input.honey)) honey" }
+
+        return InputCard(index: 4, title: SectionCopy.title("Recipe proportions"), info: .recipe, onInfo: showInfo,
+                  summary: proportionsSummary,
                   collapsed: collapsed.contains("proportions"),
                   onToggleCollapse: { toggle("proportions") }) {
             VStack(alignment: .leading, spacing: 12) {
@@ -681,7 +718,7 @@ struct ContentView: View {
     private var idxDirections: Int { vm.input.keepItSimple ? 4 : 6 }
 
     private var scheduleSection: some View {
-        InputCard(index: idxSchedule, title: "When will you serve?", info: .schedule, onInfo: showInfo,
+        InputCard(index: idxSchedule, title: SectionCopy.title("When will you serve?"), info: .schedule, onInfo: showInfo,
                   summary: scheduleSummary,
                   collapsed: collapsed.contains("schedule"),
                   onToggleCollapse: { toggle("schedule") }) {
@@ -825,7 +862,7 @@ struct ContentView: View {
     // MARK: 6 — Directions (the timeline)
 
     private var directionsSection: some View {
-        InputCard(index: idxDirections, title: "Directions", info: .schedule, onInfo: showInfo,
+        InputCard(index: idxDirections, title: SectionCopy.title("Directions"), info: .schedule, onInfo: showInfo,
                   summary: directionsSummary,
                   collapsed: collapsed.contains("directions"),
                   onToggleCollapse: { toggle("directions") }) {

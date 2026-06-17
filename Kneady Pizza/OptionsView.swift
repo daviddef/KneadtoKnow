@@ -6,7 +6,9 @@ import SwiftUI
 /// Settings, My Favourite and the Guide — each its own view.
 struct MenuDrawer: View {
     @ObservedObject var vm: DoughViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     var onClose: () -> Void
+    var onReintro: () -> Void = {}
 
     var body: some View {
         NavigationStack {
@@ -22,6 +24,28 @@ struct MenuDrawer: View {
                     }
                     .padding(18)
                     .softCard()
+
+                    // Re-run the first-time setup.
+                    Button {
+                        onReintro()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "sparkles").foregroundStyle(Palette.accent)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Set me up again").font(.rounded(16, weight: .semibold)).foregroundStyle(Palette.text)
+                                Text("Re-run the welcome setup to change your skill level and starting picks.")
+                                    .font(.rounded(12)).foregroundStyle(Palette.textSoft)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.rounded(13, weight: .semibold)).foregroundStyle(Palette.textSoft)
+                        }
+                        .padding(18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .softCard()
+                    }
+                    .buttonStyle(.plain)
 
                     menuLink(icon: "slider.horizontal.3",
                              title: "Settings",
@@ -63,6 +87,7 @@ struct MenuDrawer: View {
                     }
                 }
                 .padding(20)
+                .id(themeManager.theme)
             }
             .background(Palette.background.ignoresSafeArea())
             .navigationTitle("Menu")
@@ -108,10 +133,28 @@ struct MenuDrawer: View {
 /// Units, oven, room temperature and notification reminders.
 struct SettingsView: View {
     @ObservedObject var vm: DoughViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                // Look / theme
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("LOOK")
+                        .font(.rounded(12, weight: .bold))
+                        .foregroundStyle(Palette.textSoft)
+                    TactileSegmented(
+                        options: AppTheme.allCases,
+                        selection: $themeManager.theme,
+                        animateSelection: false
+                    ) { $0.label }
+                    Text("Classic is calm flour & terracotta; Vibrant is a bold tomato-and-basil pizzeria look.")
+                        .font(.rounded(11)).foregroundStyle(Palette.textSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(18)
+                .softCard()
+
                 // Units
                 VStack(alignment: .leading, spacing: 10) {
                     Text("UNITS")
@@ -161,7 +204,11 @@ struct SettingsView: View {
                         } label: {
                             Group {
                                 if case .loading = vm.weatherState {
-                                    ProgressView().tint(.white)
+                                    if Palette.isVibrant {
+                                        PizzaSpinner(size: 16)
+                                    } else {
+                                        ProgressView().tint(.white)
+                                    }
                                 } else {
                                     Image(systemName: "location.fill").font(.rounded(14, weight: .semibold))
                                 }
@@ -233,6 +280,7 @@ struct SettingsView: View {
                 .softCard()
             }
             .padding(20)
+            .id(themeManager.theme)   // rebuild so a theme switch re-skins fully
         }
         .background(Palette.background.ignoresSafeArea())
         .navigationTitle("Settings")
@@ -246,6 +294,10 @@ struct SettingsView: View {
 struct FavouriteView: View {
     @ObservedObject var vm: DoughViewModel
     @State private var justSaved = false
+    @State private var celebrate = 0
+
+    /// Fire a confetti burst (Vibrant only) on a happy save.
+    private func cheer() { if Palette.isVibrant { celebrate += 1 } }
 
     var body: some View {
         ScrollView {
@@ -256,7 +308,7 @@ struct FavouriteView: View {
                         subtitle: "Remembers your whole setup — style, size, yeast, proportions and toppings. It loads automatically next time and appears at the top of the style picker.",
                         isOn: Binding(
                             get: { vm.hasFavourite },
-                            set: { $0 ? vm.saveFavourite() : vm.clearFavourite() }
+                            set: { $0 ? { vm.saveFavourite(); cheer() }() : vm.clearFavourite() }
                         )
                     )
 
@@ -279,6 +331,7 @@ struct FavouriteView: View {
                         } else {
                             Button {
                                 vm.saveFavourite()
+                                cheer()
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { justSaved = true }
                                 Task {
                                     try? await Task.sleep(nanoseconds: 1_700_000_000)
@@ -295,7 +348,7 @@ struct FavouriteView: View {
                                 .padding(.vertical, 13)
                                 .background(
                                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .fill(justSaved ? Palette.sage : Palette.accent)
+                                        .fill(justSaved ? AnyShapeStyle(Palette.sage) : Palette.accentFill)
                                 )
                             }
                             .buttonStyle(.plain)
@@ -310,6 +363,7 @@ struct FavouriteView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Button {
                         vm.resetToEasy()
+                        cheer()
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "wand.and.stars")
@@ -360,6 +414,7 @@ struct FavouriteView: View {
             .padding(20)
         }
         .background(Palette.background.ignoresSafeArea())
+        .overlay(alignment: .top) { ConfettiBurst(trigger: celebrate) }
         .navigationTitle("My Favourite")
         .navigationBarTitleDisplayMode(.inline)
     }

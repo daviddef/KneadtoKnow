@@ -46,6 +46,7 @@ struct InputCard<Content: View>: View {
                         .font(.rounded(15, weight: .semibold))
                         .foregroundStyle(Palette.text)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                         .truncationMode(.tail)
                 } else {
                     Text(title)
@@ -100,25 +101,37 @@ struct TactileSegmented<T: Hashable>: View {
     let options: [T]
     @Binding var selection: T
     let label: (T) -> String
+    /// Spring-animate the selection pill. Turn OFF when the selection also
+    /// drives a full theme re-skin (an animated identity swap races the rebuild
+    /// and leaves some controls on the old palette).
+    var animateSelection: Bool = true
 
     var body: some View {
         HStack(spacing: 6) {
             ForEach(options, id: \.self) { option in
                 let isOn = option == selection
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        selection = option
+                    if animateSelection {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                            selection = option
+                        }
+                    } else {
+                        var t = Transaction()
+                        t.disablesAnimations = true
+                        withTransaction(t) { selection = option }
                     }
                     Haptics.select()
                 } label: {
                     Text(label(option))
                         .font(.rounded(14, weight: isOn ? .semibold : .regular))
                         .foregroundStyle(isOn ? Color.white : Palette.textSoft)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
                         .background(
                             RoundedRectangle(cornerRadius: 13, style: .continuous)
-                                .fill(isOn ? Palette.accent : Color.clear)
+                                .fill(isOn ? Palette.accentFill : AnyShapeStyle(Color.clear))
                                 .shadow(color: isOn ? Palette.accent.opacity(0.35) : .clear,
                                         radius: 6, y: 3)
                         )

@@ -6,6 +6,10 @@ import Combine
 final class DoughViewModel: ObservableObject {
     @Published var input = DoughInput()
     @Published var hasFavourite = false
+    /// The user's skill level — orders the style picker toward their level.
+    @Published var experienceLevel: Complexity = ExperienceStore.level {
+        didSet { ExperienceStore.level = experienceLevel }
+    }
     /// recipe id → how many of that pizza to make.
     @Published var pizzaSelection: [String: Int] = [:]
     /// Custom extra ingredients selected for this shopping list.
@@ -307,6 +311,70 @@ final class DoughViewModel: ObservableObject {
         FavouriteStore.save(rec)
         hasFavourite = true
         if !silent { Haptics.success() }
+    }
+
+    /// The style whose difficulty best matches a level (ties keep list order).
+    static func defaultStyle(for level: Complexity) -> PizzaStyle {
+        PizzaStyle.all.enumerated().min { a, b in
+            let da = abs(a.element.complexity.rawValue - level.rawValue)
+            let db = abs(b.element.complexity.rawValue - level.rawValue)
+            return da == db ? a.offset < b.offset : da < db
+        }!.element
+    }
+
+    /// A small starter selection — the first couple of savoury recipes.
+    func starterSelection(for style: PizzaStyle) -> [String: Int] {
+        let savoury = RecipeCatalog.recipes(for: style.id).filter { $0.category == .savoury }
+        var sel: [String: Int] = [:]
+        for r in savoury.prefix(2) { sel[r.id] = 2 }
+        return sel
+    }
+
+    /// Applies the first-run choices: experience level, oven, and the
+    /// permission opt-ins. Sets units from the device region.
+    func applyOnboarding(level: Experience, oven: OvenType, wantsReminders: Bool, wantsLocation: Bool) {
+        if #available(iOS 16, *) {
+            input.lengthUnit = (Locale.current.measurementSystem == .us) ? .inch : .cm
+        }
+        experienceLevel = level.color   // orders the style picker to suit them
+        input.oven = oven
+
+        // The starting style follows the level (closest-matching style).
+        let style = Self.defaultStyle(for: level.color)
+        input.humourEnabled = true
+        input.tipsEnabled = true
+
+        switch level {
+        case .villager:
+            input.keepItSimple = true
+            input.humourLevel = .lots
+            select(style: style)
+            pizzaSelection = starterSelection(for: style)
+            applySimpleProofDefault()
+            autosaveFavourite = true
+        case .pizzaiolo:
+            input.keepItSimple = true
+            input.humourLevel = .some
+            select(style: style)
+            pizzaSelection = starterSelection(for: style)
+            applySimpleProofDefault()
+            autosaveFavourite = true
+        case .roman:
+            input.keepItSimple = false
+            input.humourLevel = .less
+            select(style: style)
+            pizzaSelection = starterSelection(for: style)
+            input.ferment = .sameDay
+            resetServeToEarliest()
+            autosaveFavourite = false
+        }
+
+        if wantsReminders { notificationsEnabled = true }          // triggers the permission prompt
+        if wantsLocation { Task { await fetchLocalTemperature() } } // triggers the location prompt + sets temp
+
+        OnboardingStore.completed = true
+        if autosaveFavourite { saveFavourite(silent: true) }
+        Haptics.success()
     }
 
     /// One-tap "make it as easy as possible": Simple Home Classic, keep-it-simple

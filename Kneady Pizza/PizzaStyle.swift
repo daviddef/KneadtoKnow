@@ -177,15 +177,15 @@ struct PizzaStyle: Identifiable, Hashable {
         referenceIDY: 0.0055,       // 0.30 / 54.3
         yeasts: [.IDY, .ADY],
         assembly: "Sauce, then grated low-moisture mozzarella, then toppings.",
-        defaultPreferment: .poolish,
+        defaultPreferment: .none,
         defaultAutolyse: true
     )
 
     static let roman = PizzaStyle(
         id: "roman",
-        name: "Roman",
+        name: "Roman Tonda",
         blurb: "Thin and crisp. Cracker-light, oil-rich.",
-        details: "Round and cracker-thin (pizza tonda). Rolled flat rather than hand-stretched, and enriched with oil for a shatteringly crisp, low-rise base that stays light and crunchy edge to edge.",
+        details: "Round and cracker-thin (pizza tonda romana, the 'scrocchiarella'). Low hydration, rolled flat rather than hand-stretched, and enriched with oil for a shatteringly crisp, low-rise base that stays light and crunchy edge to edge. (Not to be confused with the high-hydration Roman al taglio / pinsa.)",
         shape: .round,
         hydration: 0.60,
         salt: 0.020,         // 1.1 / 55.6
@@ -217,7 +217,7 @@ struct PizzaStyle: Identifiable, Hashable {
         referenceIDY: 0.0100,       // 0.50 / 50.0
         yeasts: [.IDY, .ADY],
         assembly: "Cheese right to the edges first, then sauce in stripes ON TOP.",
-        defaultPreferment: .poolish,
+        defaultPreferment: .none,
         defaultAutolyse: true
     )
 
@@ -265,9 +265,9 @@ struct PizzaStyle: Identifiable, Hashable {
         id: "focaccia",
         name: "Focaccia",
         blurb: "Pillowy, oil-rich pan bread. Dimpled and golden.",
-        details: "Rectangular and deep — a very wet (~80%) dough proofed in a generously oiled pan, then dimpled with oiled fingers and bathed in an olive-oil brine. Baked at a moderate ~220 °C (not a pizza-oven blast) for 20–25 minutes until golden and crisp underneath, airy and soft within. Classic toppings are just rosemary and flaky salt; cherry tomatoes or olives are lovely too.",
+        details: "Rectangular and deep — a very wet (~78%) dough proofed in a generously oiled pan, then dimpled with oiled fingers and bathed in an olive-oil brine. Baked at a moderate ~220 °C (not a pizza-oven blast) for 20–25 minutes until golden and crisp underneath, airy and soft within. Classic toppings are just rosemary and flaky salt; cherry tomatoes or olives are lovely too.",
         shape: .rectangular,
-        hydration: 0.80,
+        hydration: 0.78,
         salt: 0.022,
         oil: 0.05,
         honey: 0.0,
