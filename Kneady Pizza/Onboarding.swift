@@ -80,6 +80,7 @@ enum Experience: Int, CaseIterable {
 /// First-run "Get yourself ready" screen.
 struct OnboardingView: View {
     @ObservedObject var vm: DoughViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     var onDone: () -> Void
 
     @State private var levelIndex: Double = 0
@@ -162,6 +163,21 @@ struct OnboardingView: View {
                     .padding(14)
                     .softCard()
 
+                    // Look / theme
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("PICK YOUR LOOK")
+                            .font(.rounded(11, weight: .bold))
+                            .foregroundStyle(Palette.textSoft)
+                        TactileSegmented(options: AppTheme.allCases,
+                                         selection: $themeManager.theme,
+                                         animateSelection: false) { $0.label }
+                        Text("Calm flour & terracotta, or a bold tomato-and-basil pizzeria. Change it any time in Settings.")
+                            .font(.rounded(11)).foregroundStyle(Palette.textSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(14)
+                    .softCard()
+
                     // Permissions
                     VStack(alignment: .leading, spacing: 12) {
                         Text("A COUPLE OF HANDY EXTRAS")
@@ -211,6 +227,7 @@ struct OnboardingView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
+                .id(themeManager.theme)   // re-skin live when the look changes
             }
         }
         .tint(Palette.accent)

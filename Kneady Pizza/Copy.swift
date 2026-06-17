@@ -5,7 +5,7 @@ import Foundation
 enum SectionCopy {
     private static let playful: [String: String] = [
         "Pizza style":         "What are we making?",
-        "Pizzas & size":       "How hungry?",
+        "Pizzas & size":       "How Hungry are you?",
         "Yeast or starter":    "The rise stuff",
         "Recipe proportions":  "The mix",
         "When will you serve?": "When's dinner?",

@@ -108,7 +108,7 @@ struct ContentView: View {
                     jokeText = Facts.random(styleID: vm.input.style.id)
                     popupEmoji = "📖"
                 } else {
-                    jokeText = Tips.random(simpleMode: vm.input.keepItSimple)
+                    jokeText = Tips.random(simpleMode: vm.input.keepItSimple, glutenFree: vm.input.glutenFree)
                     popupEmoji = "💡"
                 }
                 popupIsTip = true
@@ -377,7 +377,68 @@ struct ContentView: View {
                 .foregroundStyle(Palette.textSoft)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            glutenFreeControls
         }
+    }
+
+    /// The gluten-free toggle, its info button, and (when on) the binder choice
+    /// and a per-style viability note.
+    @ViewBuilder private var glutenFreeControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text("Gluten free")
+                    .font(.rounded(15, weight: .medium))
+                    .foregroundStyle(Palette.text)
+                Button { showInfo(.glutenFree); Haptics.tap() } label: {
+                    Image(systemName: "info.circle")
+                        .font(.rounded(15, weight: .medium))
+                        .foregroundStyle(Palette.accent)
+                        .frame(width: 30, height: 30)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                Toggle("", isOn: Binding(
+                    get: { vm.input.glutenFree },
+                    set: { vm.setGlutenFree($0) }
+                ))
+                .labelsHidden()
+                .tint(Palette.accent)
+            }
+
+            if vm.input.glutenFree {
+                Text(vm.input.style.glutenFreeViability.note)
+                    .font(.rounded(11))
+                    .foregroundStyle(Palette.textSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 8) {
+                    Text("BINDER")
+                        .font(.rounded(11, weight: .bold))
+                        .foregroundStyle(Palette.textSoft)
+                    Button { showInfo(.binder); Haptics.tap() } label: {
+                        Image(systemName: "info.circle")
+                            .font(.rounded(13, weight: .medium))
+                            .foregroundStyle(Palette.accent)
+                    }
+                    .buttonStyle(.plain)
+                }
+                TactileSegmented(
+                    options: BinderType.allCases,
+                    selection: Binding(get: { vm.input.binder },
+                                       set: { vm.input.binder = $0 })
+                ) { $0.label }
+
+                TactileToggle(
+                    title: "Binder already in my blend",
+                    subtitle: "Many shop-bought gluten-free flours already contain xanthan or psyllium. Turn this on to stop the app adding more (which makes the crust gummy).",
+                    isOn: Binding(get: { vm.input.binderInBlend },
+                                  set: { vm.input.binderInBlend = $0 })
+                )
+            }
+        }
+        .padding(.top, 4)
     }
 
     /// The style info sheet — the full, lengthier description plus its gotcha.
@@ -625,7 +686,7 @@ struct ContentView: View {
                 proportionBlock(title: "Water", value: $vm.input.hydration,
                                 range: 0.50...0.95, step: 0.01,
                                 grams: flour * vm.input.hydration,
-                                guidance: DoughCalculator.proportionGuidance(.water, value: vm.input.hydration, style: vm.input.style),
+                                guidance: DoughCalculator.proportionGuidance(.water, value: vm.input.hydration, style: vm.input.style, glutenFree: vm.input.glutenFree),
                                 name: s?.name, preferment: s?.prefermentWater, dough: s?.finalWater)
                 proportionBlock(title: "Salt", value: $vm.input.salt,
                                 range: 0...0.05, step: 0.001,
@@ -888,7 +949,8 @@ struct ContentView: View {
         } else {
             body = step.detail
         }
-        return InfoTopic(id: "step-\(step.id)", title: step.title, body: body, gotcha: step.gotcha)
+        return InfoTopic(id: "step-\(step.id)", title: step.title, body: body,
+                         gotcha: step.gotcha.isEmpty ? [] : [step.gotcha])
     }
 
     /// Plain-English explainer for the concept behind a step.
@@ -1001,7 +1063,7 @@ struct ContentView: View {
             id: "simple-guide-\(style.id)",
             title: "The basics",
             body: body,
-            gotcha: "Whichever proof you choose, watch the dough, not just the clock — a warm kitchen ferments faster than a cool one, so go by how puffy and risen it looks."
+            gotcha: ["Whichever proof you choose, watch the dough, not just the clock — a warm kitchen ferments faster than a cool one, so go by how puffy and risen it looks."]
         )
     }
 

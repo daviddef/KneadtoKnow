@@ -431,6 +431,17 @@ final class DoughViewModel: ObservableObject {
         Haptics.select()
     }
 
+    /// Toggle gluten-free. Re-seeds the recipe from the current style so the GF
+    /// hydration target, binder and dropped pre-ferment all apply at once.
+    func setGlutenFree(_ on: Bool) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            input.glutenFree = on
+            input.applyDefaults(of: input.style)
+        }
+        autosaveIfEnabled()
+        Haptics.select()
+    }
+
     // MARK: Topping planner
 
     var selectedPizzaTotal: Int { pizzaSelection.values.reduce(0, +) }

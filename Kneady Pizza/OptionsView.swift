@@ -25,32 +25,10 @@ struct MenuDrawer: View {
                     .padding(18)
                     .softCard()
 
-                    // Re-run the first-time setup.
-                    Button {
-                        onReintro()
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "sparkles").foregroundStyle(Palette.accent)
-                                .frame(width: 24)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Set me up again").font(.rounded(16, weight: .semibold)).foregroundStyle(Palette.text)
-                                Text("Re-run the welcome setup to change your skill level and starting picks.")
-                                    .font(.rounded(12)).foregroundStyle(Palette.textSoft)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right").font(.rounded(13, weight: .semibold)).foregroundStyle(Palette.textSoft)
-                        }
-                        .padding(18)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .softCard()
-                    }
-                    .buttonStyle(.plain)
-
                     menuLink(icon: "slider.horizontal.3",
                              title: "Settings",
-                             subtitle: "Units, oven, room temperature & reminders") {
-                        SettingsView(vm: vm)
+                             subtitle: "Look, units, oven, reminders & first-time setup") {
+                        SettingsView(vm: vm, onReintro: onReintro)
                     }
 
                     menuLink(icon: "star.fill",
@@ -134,6 +112,7 @@ struct MenuDrawer: View {
 struct SettingsView: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
+    var onReintro: () -> Void = {}
 
     var body: some View {
         ScrollView {
@@ -264,7 +243,7 @@ struct SettingsView: View {
                         isOn: $vm.input.humourEnabled
                     )
                     if vm.input.humourEnabled || vm.input.tipsEnabled {
-                        Text("HOW OFTEN")
+                        Text("HOW OFTEN (TIPS & JOKES)")
                             .font(.rounded(11, weight: .bold))
                             .foregroundStyle(Palette.textSoft)
                         TactileSegmented(
@@ -278,6 +257,28 @@ struct SettingsView: View {
                 }
                 .padding(18)
                 .softCard()
+
+                // Re-run the first-time setup.
+                Button {
+                    onReintro()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles").foregroundStyle(Palette.accent)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Set me up again").font(.rounded(16, weight: .semibold)).foregroundStyle(Palette.text)
+                            Text("Re-run the welcome setup to change your skill level, look and starting picks.")
+                                .font(.rounded(12)).foregroundStyle(Palette.textSoft)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.rounded(13, weight: .semibold)).foregroundStyle(Palette.textSoft)
+                    }
+                    .padding(18)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .softCard()
+                }
+                .buttonStyle(.plain)
             }
             .padding(20)
             .id(themeManager.theme)   // rebuild so a theme switch re-skins fully

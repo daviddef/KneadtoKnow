@@ -98,6 +98,28 @@ struct PizzaStyle: Identifiable, Hashable {
         }
     }
 
+    /// Target hydration for the gluten-free version of this style. GF needs far
+    /// more water (no gluten, plus thirsty starches and binders). Pan styles sit
+    /// ~78–80%; thin/Neapolitan run very wet and become pressed batters.
+    var glutenFreeHydration: Double {
+        switch id {
+        case "focaccia", "sfincione":                 return 0.80
+        case "detroit":                               return 0.78
+        case "roman":                                 return 0.72
+        case "neapolitan", "neapolitan-contemporary": return 0.85
+        default:                                      return 0.75   // everyday, newyork
+        }
+    }
+
+    /// How well the style survives going gluten-free.
+    var glutenFreeViability: GFViability {
+        switch id {
+        case "focaccia", "sfincione", "detroit":      return .clean
+        case "neapolitan", "neapolitan-contemporary": return .poor
+        default:                                      return .moderate
+        }
+    }
+
     /// A one-line spec for the style picker (hydration · pre-ferment · extras).
     var specLine: String {
         var parts = ["\(Int((hydration * 100).rounded()))% hydration"]

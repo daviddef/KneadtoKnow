@@ -51,6 +51,19 @@ enum Tips {
         "Detroit-style: cheese to the very edges for the crisp frico, then sauce in stripes on top.",
     ]
 
+    /// Gluten-free is a different craft — these surface only when GF is on.
+    static let glutenFree = [
+        "No gluten means no kneading — just mix until smooth; you can't over-work it building gluten.",
+        "Wet your hands or a spatula and press the dough out — gluten-free tears if you stretch or toss it.",
+        "Let the mixed dough rest a few minutes so the flours and binder hydrate — it firms up and handles better.",
+        "Don't add extra xanthan or psyllium if your flour blend already lists one — doubling up makes it gummy.",
+        "Par-bake the bare base for a few minutes before topping — it's the best defence against a gummy middle.",
+        "Gluten-free dough still loves a long, cold ferment — it deepens flavour and is gentler on digestion.",
+        "Eat it fresh or freeze it — gluten-free crust stales faster than wheat.",
+        "A hot stone or steel really helps a gluten-free base crisp underneath rather than steam.",
+        "Keep toppings light — a wet gluten-free base goes soggy even faster than wheat.",
+    ]
+
     // MARK: Non-repeating draw
 
     private static var bags: [String: [String]] = [:]
@@ -65,9 +78,17 @@ enum Tips {
     }
 
     /// A level-appropriate tip. Simple mode leans practical; advanced unlocks
-    /// the gotchas and the maths.
-    static func random(simpleMode: Bool) -> String {
-        simpleMode ? draw(beginner + intermediate, "simple")
-                   : draw(intermediate + advanced, "advanced")
+    /// the gotchas and the maths. When gluten-free is on, GF-specific tips are
+    /// folded in (they're a different challenge entirely).
+    static func random(simpleMode: Bool, glutenFree: Bool = false) -> String {
+        if glutenFree && Int.random(in: 0..<2) == 0 {
+            return draw(glutenFree: true)
+        }
+        return simpleMode ? draw(beginner + intermediate, "simple")
+                          : draw(intermediate + advanced, "advanced")
+    }
+
+    private static func draw(glutenFree: Bool) -> String {
+        draw(Self.glutenFree, "gf")
     }
 }

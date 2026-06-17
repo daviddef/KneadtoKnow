@@ -104,6 +104,15 @@ struct DoughInput {
     /// Autolyse: rest flour + water alone before adding salt & yeast.
     var useAutolyse: Bool = true
 
+    /// Gluten-free mode: swaps to a GF flour blend, adds a binder to stand in for
+    /// gluten, raises hydration to the style's GF target and drops pre-ferments.
+    var glutenFree: Bool = false
+    /// Which binder replaces the gluten network when `glutenFree` is on.
+    var binder: BinderType = .xanthan
+    /// Set when the user's GF flour blend already contains a binder — suppresses
+    /// the added binder so the dough doesn't turn gummy.
+    var binderInBlend: Bool = false
+
     // Adjustable baker's percentages (seeded from the style).
     var hydration: Double = PizzaStyle.neapolitan.hydration
     var salt: Double = PizzaStyle.neapolitan.salt
@@ -132,11 +141,20 @@ struct DoughInput {
             usePreferment = true; preferment = .biga; prefermentPct = Preferment.biga.defaultPct
         }
         useAutolyse = style.defaultAutolyse
+
+        // Gluten-free overrides: much higher hydration, no wheat-style pre-ferment
+        // or gluten-developing autolyse (the dough is pressed, not stretched).
+        if glutenFree {
+            hydration = style.glutenFreeHydration
+            usePreferment = false
+            useAutolyse = false
+        }
     }
 
     /// Pre-ferments only apply to commercial yeasts — sourdough is itself one,
-    /// and a Quick dough is too fast for a long pre-ferment rest.
-    var prefermentAvailable: Bool { !yeast.isSourdough && ferment != .quick }
+    /// a Quick dough is too fast for a long pre-ferment rest, and gluten-free
+    /// dough has no gluten for a biga/poolish to strengthen.
+    var prefermentAvailable: Bool { !glutenFree && !yeast.isSourdough && ferment != .quick }
     var prefermentActive: Bool { usePreferment && prefermentAvailable }
 }
 
@@ -233,14 +251,19 @@ enum DoughCalculator {
     /// Colour-coded advice for an adjustable proportion.
     enum Proportion { case water, salt, oil, honey }
 
-    static func proportionGuidance(_ kind: Proportion, value: Double, style: PizzaStyle) -> WeightGuidance {
+    static func proportionGuidance(_ kind: Proportion, value: Double, style: PizzaStyle, glutenFree: Bool = false) -> WeightGuidance {
         switch kind {
         case .water:
-            let r = style.hydrationRange
+            // Gluten-free runs much wetter, so it gets its own range centred on
+            // the style's GF target rather than the wheat hydration range.
+            let r: ClosedRange<Double> = glutenFree
+                ? (style.glutenFreeHydration - 0.06)...(style.glutenFreeHydration + 0.08)
+                : style.hydrationRange
             let wide = (r.lowerBound - 0.07)...(r.upperBound + 0.07)
+            let upperCap = glutenFree ? 1.30 : 0.95
             if r.contains(value) {
-                return .init(level: .ideal, message: "In range for \(style.name).")
-            } else if wide.contains(value) && value > 0.45 && value < 0.95 {
+                return .init(level: .ideal, message: glutenFree ? "In range for gluten-free \(style.name)." : "In range for \(style.name).")
+            } else if wide.contains(value) && value > 0.45 && value < upperCap {
                 return .init(level: .caution, message: value < r.lowerBound ? "Drier than typical — stiffer dough." : "Wetter than typical — slack and sticky.")
             } else {
                 return .init(level: .warning, message: value < r.lowerBound ? "Very dry — it won't come together well." : "Very wet — hard to handle, may not hold shape.")
@@ -320,7 +343,7 @@ enum DoughCalculator {
         let flour = totalDough / divisor
 
         var items: [Ingredient] = [
-            Ingredient("Flour", flour),
+            Ingredient(flourName(input), flour),
             Ingredient("Water", flour * input.hydration, note: "\(pct(input.hydration)) hydration"),
             Ingredient("Salt", flour * input.salt, note: pct(input.salt)),
             Ingredient(input.yeast.fullName, flour * yeastPct, note: pct(yeastPct)),
@@ -410,7 +433,7 @@ enum DoughCalculator {
         let addedWater = max(0, totalWater - starterWater)
 
         var items: [Ingredient] = [
-            Ingredient("Flour", addedFlour),
+            Ingredient(flourName(input), addedFlour),
             Ingredient("Water", addedWater, note: "\(pct(input.hydration)) hydration"),
             Ingredient(input.yeast.fullName, starter, note: "\(pct(starterPct)) of flour"),
             Ingredient("Salt", totalFlour * input.salt, note: pct(input.salt)),
@@ -423,6 +446,12 @@ enum DoughCalculator {
 
     private static func optionalExtras(flour: Double, input: DoughInput) -> [Ingredient] {
         var extras: [Ingredient] = []
+        // Gluten-free binder stands in for the gluten network. Skipped if the
+        // user's blend already contains one (adding more turns the dough gummy).
+        if input.glutenFree && !input.binderInBlend {
+            extras.append(Ingredient(input.binder.label, flour * input.binder.pct,
+                                     note: pct(input.binder.pct)))
+        }
         if input.oil > 0 {
             extras.append(Ingredient("Olive oil", flour * input.oil, note: pct(input.oil)))
         }
@@ -440,5 +469,9 @@ enum DoughCalculator {
 
     private static func pct(_ fraction: Double) -> String {
         String(format: "%.1f%%", fraction * 100)
+    }
+
+    private static func flourName(_ input: DoughInput) -> String {
+        input.glutenFree ? "Gluten-free flour blend" : "Flour"
     }
 }
