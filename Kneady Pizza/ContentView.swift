@@ -1,0 +1,1052 @@
+import SwiftUI
+import Combine
+
+enum ActiveSheet: Identifiable {
+    case planner, stylePicker, info(InfoTopic)
+    var id: String {
+        switch self {
+        case .planner: return "planner"
+        case .stylePicker: return "stylePicker"
+        case .info(let t): return "info-\(t.id)"
+        }
+    }
+}
+
+struct ContentView: View {
+    @StateObject private var vm = DoughViewModel()
+    @State private var activeSheet: ActiveSheet?
+    /// Whether the slide-in menu drawer is showing.
+    @State private var menuOpen = false
+    /// Card keys that are collapsed. Recipe proportions starts collapsed.
+    @State private var collapsed: Set<String> = ["proportions"]
+    /// The occasional floating popup — a coaching tip or a pizza joke.
+    @State private var showJoke = false
+    @State private var jokeText = ""
+    @State private var popupIsTip = false
+    @State private var jokeTicks = 0
+    private let jokeTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
+    /// Keeps "now" live so Start/Ready times track the real clock.
+    @Environment(\.scenePhase) private var scenePhase
+    private let clockTimer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        ZStack {
+            Palette.background.ignoresSafeArea()
+
+            ScrollViewReader { proxy in
+                VStack(spacing: 0) {
+                    header
+                    totalBanner(proxy)
+                    ScrollView {
+                        VStack(spacing: 18) {
+                            if vm.input.keepItSimple {
+                                simpleSetupCard
+                                simpleDirectionsCard
+                                    .id("directions")
+                                StyleHeroImage(style: vm.input.style)
+                            } else {
+                                styleSection
+                                sizeSection
+                                yeastSection
+                                recipeDefaultsSection
+                                scheduleSection
+                                directionsSection
+                                    .id("directions")
+                                StyleHeroImage(style: vm.input.style)
+
+                                ResultView(result: vm.result, metric: vm.metric,
+                                           toppingLines: vm.toppingLines(),
+                                           extras: vm.selectedExtras,
+                                           hasSelection: vm.selectedPizzaTotal > 0,
+                                           shareText: vm.shareText(),
+                                           onPlan: { activeSheet = .planner })
+                            }
+
+                            footnote
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 6)
+                        .padding(.bottom, 40)
+                    }
+                }
+            }
+
+            menuOverlay
+            jokeOverlay
+        }
+        .tint(Palette.accent)
+        .preferredColorScheme(nil)
+        .onChange(of: vm.input.humourEnabled) { _, _ in
+            if !vm.input.humourEnabled && !vm.input.tipsEnabled { withAnimation(.easeInOut) { showJoke = false } }
+        }
+        .onChange(of: vm.input.tipsEnabled) { _, _ in
+            if !vm.input.humourEnabled && !vm.input.tipsEnabled { withAnimation(.easeInOut) { showJoke = false } }
+        }
+        .onReceive(clockTimer) { _ in vm.refreshNow() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { vm.refreshNow() }
+        }
+        .onReceive(jokeTimer) { _ in
+            let tips = vm.input.tipsEnabled
+            let humour = vm.input.humourEnabled
+            guard tips || humour, !menuOpen, activeSheet == nil, !showJoke else { return }
+            jokeTicks += 1
+            guard jokeTicks >= vm.input.humourLevel.ticksBetween else { return }
+            jokeTicks = 0
+            // Tip or joke: both if available, else whichever is on.
+            let useTip = (tips && humour) ? Bool.random() : tips
+            if useTip {
+                jokeText = Tips.random(simpleMode: vm.input.keepItSimple)
+                popupIsTip = true
+            } else {
+                jokeText = Jokes.randomGeneral()
+                popupIsTip = false
+            }
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { showJoke = true }
+            Task {
+                try? await Task.sleep(nanoseconds: 7_000_000_000)
+                withAnimation(.easeInOut) { showJoke = false }
+            }
+        }
+        .onAppear {
+            UIApplication.shared.isIdleTimerDisabled = true   // no auto-lock
+            vm.refreshNow()
+            vm.rescheduleNotifications()
+        }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
+        .onChange(of: vm.schedule.start) { _, _ in
+            vm.rescheduleNotifications()
+        }
+        .onChange(of: vm.input.keepItSimple) { _, simple in
+            if simple {
+                // The style takes over sizing, and the default plan becomes
+                // a Quick proof ready in 12 hours.
+                vm.input.sizeMode = .weight
+                vm.input.ballWeight = vm.input.style.defaultBallWeight
+                vm.applySimpleProofDefault()
+            } else {
+                // Advanced mode reveals the recipe proportions, open by default.
+                collapsed.remove("proportions")
+            }
+        }
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .planner:
+                RecipePlannerView(vm: vm)
+            case .stylePicker:
+                StylePickerView(vm: vm)
+            case .info(let topic):
+                InfoSheet(topic: topic, humourEnabled: vm.input.humourEnabled)
+            }
+        }
+    }
+
+    private func showInfo(_ topic: InfoTopic) { activeSheet = .info(topic) }
+
+    private func openMenu() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { menuOpen = true }
+        Haptics.tap()
+    }
+    private func closeMenu() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { menuOpen = false }
+    }
+
+    // MARK: Slide-in menu
+
+    @ViewBuilder
+    private var menuOverlay: some View {
+        if menuOpen {
+            Color.black.opacity(0.32)
+                .ignoresSafeArea()
+                .transition(.opacity)
+                .onTapGesture { closeMenu() }
+
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                MenuDrawer(vm: vm, onClose: { closeMenu() })
+                    .frame(maxWidth: 380)
+                    .frame(maxHeight: .infinity)
+                    .background(Palette.background.ignoresSafeArea())
+                    .transition(.move(edge: .trailing))
+                    .gesture(
+                        DragGesture()
+                            .onEnded { value in
+                                if value.translation.width > 60 { closeMenu() }
+                            }
+                    )
+            }
+        }
+    }
+
+    // MARK: Floating pizza joke
+
+    @ViewBuilder
+    private var jokeOverlay: some View {
+        if showJoke {
+            VStack {
+                Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showJoke = false }
+                } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        Text(popupIsTip ? "💡" : "🍕").font(.system(size: 30))
+                        Text(jokeText)
+                            .font(.rounded(13, weight: .medium))
+                            .foregroundStyle(Palette.text)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.rounded(16))
+                            .foregroundStyle(Palette.textSoft)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .softCard(cornerRadius: 22)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .zIndex(2)
+        }
+    }
+
+    // MARK: Header
+
+    private var header: some View {
+        HStack(alignment: .center) {
+            Text("🍕 Kneady Pizza")
+                .font(.rounded(22, weight: .bold))
+                .foregroundStyle(Palette.text)
+            Spacer()
+            HStack(spacing: 4) {
+                Button {
+                    activeSheet = .planner
+                    Haptics.tap()
+                } label: {
+                    Image(systemName: "basket.fill")
+                        .font(.rounded(18, weight: .medium))
+                        .foregroundStyle(Palette.accent)
+                        .frame(width: 40, height: 40)
+                }
+                .buttonStyle(.plain)
+                ShareMenuButton(shareText: vm.shareText(), iconSize: 19)
+                    .frame(width: 40, height: 40)
+                Button {
+                    openMenu()
+                } label: {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.rounded(20, weight: .semibold))
+                        .foregroundStyle(Palette.text)
+                        .frame(width: 40, height: 40)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+    }
+
+    // Always-visible total — tap to jump to the directions.
+    private func totalBanner(_ proxy: ScrollViewProxy) -> some View {
+        Button {
+            Haptics.tap()
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                collapsed.remove("directions")
+                proxy.scrollTo("directions", anchor: .top)
+            }
+        } label: {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Total dough")
+                        .font(.rounded(12, weight: .medium))
+                        .foregroundStyle(Palette.textSoft)
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock")
+                        Text("\(Scheduler.durationShort(vm.schedule.totalHours)) prep · \(Scheduler.durationShort(vm.schedule.leadHours)) serve")
+                    }
+                    .font(.rounded(11, weight: .medium))
+                    .foregroundStyle(Palette.sage)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                }
+                Spacer()
+                Text(Units.weight(vm.result.totalWeight, metric: vm.metric))
+                    .font(.rounded(18, weight: .bold))
+                    .foregroundStyle(Palette.accent)
+                    .contentTransition(.numericText())
+                Text("· \(vm.input.ballCount) × \(Units.weight(vm.result.ballWeight, metric: vm.metric))")
+                    .font(.rounded(12))
+                    .foregroundStyle(Palette.textSoft)
+                    .lineLimit(1)
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.rounded(15, weight: .medium))
+                    .foregroundStyle(Palette.accent.opacity(0.7))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .softWell(cornerRadius: 16)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 8)
+    }
+
+    private func toggle(_ key: String) {
+        if collapsed.contains(key) { collapsed.remove(key) } else { collapsed.insert(key) }
+    }
+
+    // MARK: 1 — Style
+
+    private var styleSection: some View {
+        InputCard(index: 1, title: "Pizza style", info: styleInfo, onInfo: showInfo,
+                  summary: vm.input.style.name,
+                  collapsed: collapsed.contains("style"),
+                  onToggleCollapse: { toggle("style") }) {
+            styleControls
+        }
+    }
+
+    /// The style picker button alone (no blurb).
+    @ViewBuilder private var styleDropdownButton: some View {
+        Button {
+            activeSheet = .stylePicker
+            Haptics.tap()
+        } label: {
+            HStack(spacing: 10) {
+                Text(vm.input.style.originFlag)
+                    .font(.system(size: 18))
+                Text(vm.input.style.name)
+                    .font(.rounded(18, weight: .semibold))
+                    .foregroundStyle(Palette.text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                shapeBadge(vm.input.style.shape, isOn: false)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.rounded(13, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .softWell(cornerRadius: 16)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// The style picker button and its one-line blurb (used in full mode).
+    @ViewBuilder private var styleControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            styleDropdownButton
+            Text(vm.input.style.blurb)
+                .font(.rounded(12))
+                .foregroundStyle(Palette.textSoft)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// The style info sheet — the full, lengthier description plus its gotcha.
+    private var styleInfo: InfoTopic {
+        let style = vm.input.style
+        return InfoTopic(
+            id: "style-\(style.id)",
+            title: style.name,
+            body: "\(style.details)\n\nMaths: this style seeds the baker's percentages — \(Int((style.hydration * 100).rounded()))% hydration\(style.defaultPreferment == .none ? "" : ", a \(style.defaultPreferment.label.lowercased())") — that every other number is built from.",
+            gotcha: InfoTopic.style.gotcha
+        )
+    }
+
+    private func shapeBadge(_ shape: PizzaShape, isOn: Bool) -> some View {
+        Text(shape.label)
+            .font(.rounded(10, weight: .bold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(isOn ? Color.white.opacity(0.25) : Palette.accent.opacity(0.14)))
+            .foregroundStyle(isOn ? Color.white : Palette.accent)
+    }
+
+    // MARK: 2 — Pizzas & size
+
+    private func sizeModeLabel(_ mode: SizeMode) -> String {
+        if mode == .diameter { return shape == .round ? "Pizza Size" : "Pan Size" }
+        return shape == .round ? "Ball Weight" : "Pan Weight"
+    }
+
+    private var sizeSection: some View {
+        InputCard(index: 2, title: "Pizzas & size", info: .size, onInfo: showInfo,
+                  summary: sizeSummary,
+                  collapsed: collapsed.contains("size"),
+                  onToggleCollapse: { toggle("size") }) {
+            VStack(spacing: 18) {
+                TactileStepper(
+                    title: vm.input.keepItSimple ? "How many pizzas?" : (shape == .round ? "Dough balls" : "Pans"),
+                    value: $vm.input.ballCount,
+                    range: 1...30
+                )
+
+                if vm.input.keepItSimple {
+                    Text("Each \(shape.noun) is sized automatically for \(vm.input.style.name) — about \(Units.weight(vm.input.style.defaultBallWeight, metric: vm.metric)). Turn off “Keep it simple” in the menu to set it yourself.")
+                        .font(.rounded(11))
+                        .foregroundStyle(Palette.textSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                Divider().overlay(Palette.textSoft.opacity(0.15))
+
+                TactileSegmented(
+                    options: [.weight, .diameter],
+                    selection: $vm.input.sizeMode,
+                    label: sizeModeLabel
+                )
+
+                let guidance = DoughCalculator.guidance(forBall: DoughCalculator.ballWeight(for: vm.input), shape: shape)
+                let weightStr = Units.weight(DoughCalculator.ballWeight(for: vm.input), metric: vm.metric)
+
+                if vm.input.sizeMode == .diameter {
+                    if shape == .round {
+                        let range: ClosedRange<Double> = vm.input.lengthUnit == .cm ? 15...45 : 6...18
+                        TactileSlider(
+                            title: "Diameter",
+                            value: $vm.input.diameter,
+                            range: range,
+                            step: vm.input.lengthUnit == .cm ? 1 : 0.5,
+                            valueText: lengthText(vm.input.diameter),
+                            tint: guidance.color,
+                            caption: "≈ \(weightStr) per \(shape.noun) · \(guidance.message)"
+                        )
+                    } else {
+                        let lr: ClosedRange<Double> = vm.input.lengthUnit == .cm ? 20...45 : 8...18
+                        let wr: ClosedRange<Double> = vm.input.lengthUnit == .cm ? 15...40 : 6...16
+                        TactileSlider(
+                            title: "Length",
+                            value: $vm.input.panLength,
+                            range: lr,
+                            step: vm.input.lengthUnit == .cm ? 1 : 0.5,
+                            valueText: lengthText(vm.input.panLength)
+                        )
+                        TactileSlider(
+                            title: "Width",
+                            value: $vm.input.panWidth,
+                            range: wr,
+                            step: vm.input.lengthUnit == .cm ? 1 : 0.5,
+                            valueText: lengthText(vm.input.panWidth),
+                            caption: "≈ \(weightStr) of dough per pan"
+                        )
+                    }
+                } else {
+                    let wRange: ClosedRange<Double> = shape == .round ? 150...400 : 300...900
+                    TactileSlider(
+                        title: shape == .round ? "Weight per ball" : "Weight per pan",
+                        value: $vm.input.ballWeight,
+                        range: wRange,
+                        step: 5,
+                        valueText: Units.weight(vm.input.ballWeight, metric: vm.metric),
+                        tint: guidance.color,
+                        caption: "How heavy each \(shape.noun) should be · \(guidance.message)"
+                    )
+                }
+                }
+            }
+        }
+    }
+
+    // MARK: 3 — Yeast
+
+    private var yeastSection: some View {
+        InputCard(index: 3, title: "Yeast or starter", info: .yeast, onInfo: showInfo,
+                  summary: yeastSummary,
+                  collapsed: collapsed.contains("yeast"),
+                  onToggleCollapse: { toggle("yeast") }) {
+            VStack(spacing: 14) {
+                TactileSegmented(
+                    options: vm.input.style.yeasts,
+                    selection: $vm.input.yeast
+                ) { $0.rawValue }
+
+                Text("\(vm.input.yeast.fullName) · suited to \(vm.input.style.name)")
+                    .font(.rounded(13))
+                    .foregroundStyle(Palette.textSoft)
+
+                if vm.input.prefermentAvailable {
+                    Divider().overlay(Palette.textSoft.opacity(0.15))
+
+                    HStack(spacing: 6) {
+                        Text("Pre-ferment")
+                            .font(.rounded(16))
+                            .foregroundStyle(Palette.text)
+                        Button { showInfo(.preferment) } label: {
+                            Image(systemName: "info.circle")
+                                .font(.rounded(14, weight: .medium))
+                                .foregroundStyle(Palette.accent)
+                                .frame(width: 28, height: 28)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
+                    }
+                    TactileSegmented(
+                        options: PrefermentChoice.allCases,
+                        selection: prefermentChoice
+                    ) { $0.label }
+
+                    if vm.input.usePreferment {
+                        Text(vm.input.preferment.blurb)
+                            .font(.rounded(12))
+                            .foregroundStyle(Palette.textSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        let pg = DoughCalculator.prefermentGuidance(vm.input.preferment, value: vm.input.prefermentPct)
+                        TactileSlider(
+                            title: "\(vm.input.preferment.name) proportion",
+                            value: $vm.input.prefermentPct,
+                            range: 0.10...1.00,
+                            step: 0.05,
+                            valueText: pct(vm.input.prefermentPct),
+                            tint: pg.color,
+                            caption: "Share of the total flour pre-fermented."
+                        )
+                        if pg.level != .ideal {
+                            HStack(spacing: 5) {
+                                Image(systemName: pg.level == .warning ? "exclamationmark.triangle.fill" : "info.circle.fill")
+                                Text(pg.message)
+                            }
+                            .font(.rounded(11, weight: .medium))
+                            .foregroundStyle(pg.color)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                } else if vm.input.ferment == .quick {
+                    Text("A Quick dough is too fast for a pre-ferment — it's skipped. Switch to Warm or Cold to use a poolish or biga.")
+                        .font(.rounded(12))
+                        .foregroundStyle(Palette.textSoft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Text("Sourdough is itself a pre-ferment, so a poolish or biga isn't used here.")
+                        .font(.rounded(12))
+                        .foregroundStyle(Palette.textSoft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Divider().overlay(Palette.textSoft.opacity(0.15))
+
+                HStack(spacing: 6) {
+                    TactileToggle(
+                        title: "Autolyse first",
+                        subtitle: "Rest flour & water alone for ~30 min before adding salt & yeast — easier to stretch.",
+                        isOn: $vm.input.useAutolyse
+                    )
+                    Button { showInfo(.autolyse) } label: {
+                        Image(systemName: "info.circle")
+                            .font(.rounded(14, weight: .medium))
+                            .foregroundStyle(Palette.accent)
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    // MARK: 4 — Recipe proportions
+
+    private var recipeDefaultsSection: some View {
+        let r = vm.result
+        let s = r.prefermentSplit
+        let divisor = 1 + vm.input.hydration + vm.input.salt + vm.input.oil + vm.input.honey
+        let flour = divisor > 0 ? r.totalWeight / divisor : 0
+
+        return InputCard(index: 4, title: "Recipe proportions", info: .recipe, onInfo: showInfo,
+                  summary: "\(Int((vm.input.hydration * 100).rounded()))% hydration",
+                  collapsed: collapsed.contains("proportions"),
+                  onToggleCollapse: { toggle("proportions") }) {
+            VStack(alignment: .leading, spacing: 12) {
+                if let s { stageLegend(name: s.name) }
+
+                // Flour (derived, not adjustable)
+                VStack(spacing: 5) {
+                    HStack {
+                        Text("Flour")
+                            .font(.rounded(16))
+                            .foregroundStyle(Palette.text)
+                        Spacer()
+                        Text("≈ \(grams(flour))")
+                            .font(.rounded(17, weight: .semibold))
+                            .foregroundStyle(Palette.accent)
+                            .contentTransition(.numericText())
+                    }
+                    if let s { splitLine(name: s.name, preferment: s.prefermentFlour, dough: s.finalFlour) }
+                }
+
+                proportionBlock(title: "Water", value: $vm.input.hydration,
+                                range: 0.50...0.95, step: 0.01,
+                                grams: flour * vm.input.hydration,
+                                guidance: DoughCalculator.proportionGuidance(.water, value: vm.input.hydration, style: vm.input.style),
+                                name: s?.name, preferment: s?.prefermentWater, dough: s?.finalWater)
+                proportionBlock(title: "Salt", value: $vm.input.salt,
+                                range: 0...0.05, step: 0.001,
+                                grams: flour * vm.input.salt,
+                                guidance: DoughCalculator.proportionGuidance(.salt, value: vm.input.salt, style: vm.input.style),
+                                finalDoughOnly: true)
+                proportionBlock(title: "Olive oil", value: $vm.input.oil,
+                                range: 0...0.10, step: 0.001,
+                                grams: flour * vm.input.oil,
+                                guidance: DoughCalculator.proportionGuidance(.oil, value: vm.input.oil, style: vm.input.style),
+                                finalDoughOnly: true)
+                proportionBlock(title: "Honey", value: $vm.input.honey,
+                                range: 0...0.05, step: 0.001,
+                                grams: flour * vm.input.honey,
+                                guidance: DoughCalculator.proportionGuidance(.honey, value: vm.input.honey, style: vm.input.style),
+                                finalDoughOnly: true)
+
+                Text("Percentages are of flour weight (baker's %).")
+                    .font(.rounded(11))
+                    .foregroundStyle(Palette.textSoft)
+            }
+        }
+    }
+
+    private func stageLegend(name: String) -> some View {
+        Text("Two stages: the \(name.lowercased()) takes only flour & water; salt, oil and honey join the final dough.")
+            .font(.rounded(11))
+            .foregroundStyle(Palette.textSoft)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func proportionBlock(title: String, value: Binding<Double>,
+                                 range: ClosedRange<Double>, step: Double,
+                                 grams gramValue: Double,
+                                 guidance: WeightGuidance,
+                                 name: String? = nil,
+                                 preferment: Double? = nil, dough: Double? = nil,
+                                 finalDoughOnly: Bool = false) -> some View {
+        VStack(spacing: 5) {
+            TactileSlider(title: title, value: value, range: range, step: step,
+                          valueText: pct(value.wrappedValue),
+                          tint: guidance.color)
+            if let preferment, let dough {
+                splitLine(name: name ?? "Pre-ferment", preferment: preferment, dough: dough)
+            } else if finalDoughOnly && vm.input.prefermentActive {
+                captionLine("≈ \(grams(gramValue)) · all in final dough")
+            } else {
+                captionLine("≈ \(grams(gramValue))")
+            }
+            if guidance.level != .ideal {
+                HStack(spacing: 5) {
+                    Image(systemName: guidance.level == .warning ? "exclamationmark.triangle.fill" : "info.circle.fill")
+                    Text(guidance.message)
+                }
+                .font(.rounded(11, weight: .medium))
+                .foregroundStyle(guidance.color)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    /// "Poolish 121 g + Dough 261 g = 382 g" — same rounded font, two-column feel.
+    private func splitLine(name: String, preferment: Double, dough: Double) -> some View {
+        HStack(spacing: 5) {
+            Text("\(name) \(grams(preferment))").foregroundStyle(Palette.sage)
+            Text("+").foregroundStyle(Palette.textSoft)
+            Text("Dough \(grams(dough))").foregroundStyle(Palette.text)
+            Text("=").foregroundStyle(Palette.textSoft)
+            Text(grams(preferment + dough)).foregroundStyle(Palette.accent)
+            Spacer()
+        }
+        .font(.rounded(12, weight: .medium))
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
+    }
+
+    private func captionLine(_ s: String) -> some View {
+        Text(s)
+            .font(.rounded(12))
+            .foregroundStyle(Palette.textSoft)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: 5 — Schedule
+
+    /// Schedule/Directions renumber when the simple-mode cards are hidden.
+    private var idxSchedule: Int { vm.input.keepItSimple ? 3 : 5 }
+    private var idxDirections: Int { vm.input.keepItSimple ? 4 : 6 }
+
+    private var scheduleSection: some View {
+        InputCard(index: idxSchedule, title: "When will you serve?", info: .schedule, onInfo: showInfo,
+                  summary: scheduleSummary,
+                  collapsed: collapsed.contains("schedule"),
+                  onToggleCollapse: { toggle("schedule") }) {
+            VStack(alignment: .leading, spacing: 14) {
+                fermentationControl
+                Divider().overlay(Palette.textSoft.opacity(0.15))
+                serveTimeControl
+                startSummaryLine()
+            }
+        }
+    }
+
+    /// Fermentation segmented picker + its blurb.
+    @ViewBuilder private var fermentationControl: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Fermentation")
+                .font(.rounded(13, weight: .semibold))
+                .foregroundStyle(Palette.textSoft)
+            TactileSegmented(
+                options: FermentStyle.allCases,
+                selection: fermentChoice
+            ) { $0.label }
+            Text(vm.input.ferment.blurb)
+                .font(.rounded(12))
+                .foregroundStyle(Palette.textSoft)
+                .fixedSize(horizontal: false, vertical: true)
+            soonestLine
+        }
+    }
+
+    /// "Soonest from now — Quick … · Warm … · Cold …" — shared by both layouts.
+    @ViewBuilder private var soonestLine: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "clock.badge.checkmark")
+            Text("Soonest from now — Quick \(Scheduler.durationShort(vm.soonestReady(.quick))) · Warm \(Scheduler.durationShort(vm.soonestReady(.sameDay))) · Cold \(Scheduler.durationShort(vm.soonestReady(.cold)))")
+        }
+        .font(.rounded(11, weight: .medium))
+        .foregroundStyle(Palette.sage)
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
+    }
+
+    /// The "Ready in" slider (quick) or "Serve at" date picker (warm/cold).
+    @ViewBuilder private var serveTimeControl: some View {
+        if vm.input.ferment == .quick {
+            TactileSlider(
+                title: "Ready in",
+                value: readyInHours,
+                range: 1...24,
+                step: 0.5,
+                valueText: Scheduler.duration(readyInHours.wrappedValue)
+            )
+        } else {
+            HStack {
+                Text("Ready")
+                    .font(.rounded(16))
+                    .foregroundStyle(Palette.text)
+                Spacer()
+                DatePicker(
+                    "",
+                    selection: $vm.input.serveDate,
+                    in: vm.now...,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .labelsHidden()
+                .environment(\.locale, Locale(identifier: "en_GB"))   // 24-hour
+            }
+        }
+    }
+
+    /// "Start … · total" plus the "too tight" warning. Pass `info` to tuck an
+    /// info button onto the end of the line (used by the chrome-free simple card).
+    @ViewBuilder private func startSummaryLine(info: InfoTopic? = nil) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "play.circle.fill")
+                .foregroundStyle(Palette.sage)
+            Text("Start")
+                .foregroundStyle(Palette.textSoft)
+            Text(Scheduler.clock(vm.schedule.start, now: vm.now))
+                .font(.rounded(15, weight: .semibold))
+                .foregroundStyle(Palette.text)
+            Image(systemName: "arrow.right")
+                .font(.rounded(12, weight: .semibold))
+                .foregroundStyle(Palette.textSoft)
+            Text("Ready")
+                .foregroundStyle(Palette.textSoft)
+            Text(Scheduler.clock(vm.schedule.serve, now: vm.now))
+                .font(.rounded(15, weight: .semibold))
+                .foregroundStyle(Palette.accent)
+            Spacer(minLength: 4)
+            if let info {
+                Button { showInfo(info); Haptics.tap() } label: {
+                    Image(systemName: "info.circle")
+                        .font(.rounded(15, weight: .medium))
+                        .foregroundStyle(Palette.accent)
+                        .frame(width: 30, height: 30)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .font(.rounded(14))
+        .lineLimit(1)
+        .minimumScaleFactor(0.65)
+
+        if vm.schedule.autoAdjusted {
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "wand.and.stars")
+                Text("Auto-adjusted to fit your time: warmed the proof from \(Int(vm.input.temperatureC.rounded())) °C to about \(Int(vm.schedule.yeastTemp.rounded())) °C, and raised the yeast to match. Keep it somewhere cosy and it'll be ready when you are.")
+            }
+            .font(.rounded(12, weight: .medium))
+            .foregroundStyle(Palette.accent)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+
+        if vm.schedule.isTight {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Not enough time for a \(vm.input.ferment.label.lowercased()) rise — the plan is compressed and will be rushed.")
+                    .font(.rounded(12))
+                    .foregroundStyle(Palette.amber)
+                    .fixedSize(horizontal: false, vertical: true)
+                if vm.input.ferment != .quick {
+                    Button {
+                        vm.setFermentStyle(.quick)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "bolt.fill")
+                            Text("Switch to a Quick dough")
+                        }
+                        .font(.rounded(14, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                    }
+                    .buttonStyle(TactileButtonStyle(isProminent: true))
+                }
+            }
+        }
+    }
+
+    // MARK: 6 — Directions (the timeline)
+
+    private var directionsSection: some View {
+        InputCard(index: idxDirections, title: "Directions", info: .schedule, onInfo: showInfo,
+                  summary: directionsSummary,
+                  collapsed: collapsed.contains("directions"),
+                  onToggleCollapse: { toggle("directions") }) {
+            timelineView
+        }
+    }
+
+    @ViewBuilder private var timelineView: some View {
+        TimelineView(schedule: vm.schedule, now: vm.now,
+                     onInfo: { step in activeSheet = .info(stepInfo(for: step)) },
+                     itemsFor: { vm.stepItems(for: $0) },
+                     toppingPlan: vm.toppingPlan(),
+                     toppingAdvice: vm.toppingAdvice,
+                     metric: vm.metric)
+    }
+
+    /// A step's info sheet — leads with *what the thing is* (poolish, autolyse,
+    /// cold proof…) before the step's own instructions.
+    private func stepInfo(for step: ScheduleStep) -> InfoTopic {
+        let body: String
+        if let concept = conceptBlurb(step.title) {
+            body = "\(concept)\n\nWhat to do now: \(step.detail)"
+        } else {
+            body = step.detail
+        }
+        return InfoTopic(id: "step-\(step.id)", title: step.title, body: body, gotcha: step.gotcha)
+    }
+
+    /// Plain-English explainer for the concept behind a step.
+    private func conceptBlurb(_ title: String) -> String? {
+        switch title {
+        case "The Poolish":
+            return "A poolish is a loose, 100%-hydration pre-ferment — equal parts flour and water with a pinch of yeast, left to bubble for around 12 hours. Mixing some of your flour ahead like this builds flavour, extensibility and a lighter crumb."
+        case "The Biga":
+            return "A biga is a stiff, ~50%-hydration Italian pre-ferment with a little yeast, rested around 16 hours (often somewhere cool). It gives the dough extra strength and a deeper, slightly tangy, aromatic flavour."
+        case "Autolyse":
+            return "An autolyse is a short rest with just the flour and water — no salt or yeast yet. The flour hydrates fully and the dough relaxes, so it stretches far more easily later."
+        case "The Dough":
+            return "This is the final mix, where everything comes together. It then has its first long rise as one mass — the bulk ferment — which is where most of the flavour and structure develop."
+        case "Ball Roll", "Into Pans":
+            return "The dough is divided and shaped into balls (or pressed into pans) so each portion proofs evenly and is ready to stretch. This final rest is called the proof."
+        case "Ready It":
+            return "Cold dough is tight and tears easily. Letting it come back to room temperature first relaxes the gluten so it shapes without fighting back."
+        case "Shape It":
+            return "Shaping is stretching each ball into a base by hand — from the centre outwards, never with a rolling pin, so you keep the air in the rim."
+        case "Top It":
+            return "Toppings go on in the order that bakes best — usually sauce, then cheese, then the rest. Go light so the base doesn't turn soggy."
+        case "Bake It":
+            return "The bake. The hotter your oven and the more preheated your stone or steel, the better the crust."
+        default:
+            return nil
+        }
+    }
+
+    // MARK: Simple mode — two merged, chrome-free cards
+
+    @ViewBuilder
+    private func simpleCard<C: View>(title: String, info: InfoTopic,
+                                     accessoryIcon: String? = nil, onAccessory: (() -> Void)? = nil,
+                                     @ViewBuilder content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.rounded(15, weight: .semibold))
+                    .foregroundStyle(Palette.textSoft)
+                Spacer(minLength: 6)
+                if let accessoryIcon {
+                    Button { onAccessory?(); Haptics.tap() } label: {
+                        Image(systemName: accessoryIcon)
+                            .font(.rounded(16, weight: .medium))
+                            .foregroundStyle(Palette.accent)
+                            .frame(width: 34, height: 34)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                Button { showInfo(info); Haptics.tap() } label: {
+                    Image(systemName: "info.circle")
+                        .font(.rounded(16, weight: .medium))
+                        .foregroundStyle(Palette.accent)
+                        .frame(width: 34, height: 34)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            content()
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .softCard()
+    }
+
+    /// Everything needed to decide, on one screen — no title, no chrome.
+    /// The info button rides on the bottom "total" line to save space.
+    private var simpleSetupCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            styleDropdownButton
+            TactileStepper(title: "How many pizzas?", value: $vm.input.ballCount, range: 1...30)
+
+            Divider().overlay(Palette.textSoft.opacity(0.15))
+
+            TactileSegmented(
+                options: FermentStyle.allCases,
+                selection: fermentChoice
+            ) { $0.label }
+            soonestLine
+            serveTimeControl
+            startSummaryLine(info: simpleGuideInfo)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .softCard()
+    }
+
+    /// One collective explainer for the simple-mode card — covers the style,
+    /// the proof choices, and the behind-the-scenes terms a newcomer won't know.
+    private var simpleGuideInfo: InfoTopic {
+        let style = vm.input.style
+        let body = """
+        You've picked \(style.name) — \(style.blurb.lowercased())
+
+        Proofing is the rise — letting the yeast slowly fill the dough with air. Pick one:
+        • Quick — a fast, warm rise of about 3 hours, helped along by extra yeast and warm water. For pizza today, with a touch less depth of flavour.
+        • Warm Proof — a rise at room temperature, usually somewhere between 8 and 24 hours depending on how warm your kitchen is. Simple, reliable and a good all-rounder.
+        • Cold Proof — a long, slow rise in the fridge over 1–3 days. The most flavour and the lightest, most digestible crust, but it needs planning ahead.
+
+        Set when you want to eat (or, for Quick, how soon) and the app counts backwards to tell you when to start. If the time you've left is too short for the proof you chose, it flags the plan as rushed and offers a "Switch to a Quick dough" button — tap it to swap to the fast method so it still fits, or give yourself more time / choose Cold or Warm for a calmer bake.
+
+        Your style may also use, automatically:
+        • A poolish or biga — a small batch of flour, water and a little yeast mixed ahead and left to ferment (around 12–16 hours), then added to the dough for more flavour and strength. A poolish is loose and wet; a biga is stiff.
+        • An autolyse — a short ~30-minute rest of just flour and water before the salt and yeast go in, so the dough hydrates and stretches more easily.
+
+        Tap the ⓘ beside any step in the Directions to learn what that step is.
+        """
+        return InfoTopic(
+            id: "simple-guide-\(style.id)",
+            title: "The basics",
+            body: body,
+            gotcha: "Whichever proof you choose, watch the dough, not just the clock — a warm kitchen ferments faster than a cool one, so go by how puffy and risen it looks."
+        )
+    }
+
+    /// The steps, just below the fold — the banner taps down to here.
+    private var simpleDirectionsCard: some View {
+        simpleCard(title: "Directions", info: .schedule) {
+            timelineView
+        }
+    }
+
+    private var footnote: some View {
+        Text("Times and yeast amounts are estimates that scale with temperature. Trust your dough — adjust to taste.")
+            .font(.rounded(11))
+            .foregroundStyle(Palette.textSoft)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 12)
+            .padding(.top, 4)
+    }
+
+    // MARK: Helpers
+
+    private var shape: PizzaShape { vm.input.style.shape }
+
+    // Collapsed-card summaries — plain-English, at-a-glance.
+    private var sizeSummary: String {
+        let noun = vm.input.ballCount == 1 ? shape.noun : shape.nounPlural
+        let size: String
+        if vm.input.sizeMode == .weight {
+            size = "\(Units.weight(vm.input.ballWeight, metric: vm.metric)) each"
+        } else if shape == .round {
+            size = "\(lengthText(vm.input.diameter)) across"
+        } else {
+            size = "\(lengthText(vm.input.panLength))×\(lengthText(vm.input.panWidth))"
+        }
+        return "\(vm.input.ballCount) \(noun), \(size)"
+    }
+    private var yeastSummary: String {
+        vm.input.yeast.fullName + (vm.input.prefermentActive ? ", \(vm.input.preferment.name.lowercased())" : "")
+    }
+    private var scheduleSummary: String {
+        if vm.input.ferment == .quick {
+            return "Quick — ready in \(Scheduler.duration(vm.schedule.leadHours))"
+        }
+        return "\(vm.input.ferment.label) — ready in \(Scheduler.duration(vm.schedule.leadHours))"
+    }
+    private var directionsSummary: String {
+        "Start \(Scheduler.clock(vm.schedule.start, now: vm.now))"
+    }
+
+    /// Maps the fermentation segmented control onto the input.
+    private var fermentChoice: Binding<FermentStyle> {
+        Binding(get: { vm.input.ferment }, set: { vm.setFermentStyle($0) })
+    }
+
+    /// "Ready in" hours for a Quick dough (drives serve = now + hours).
+    private var readyInHours: Binding<Double> {
+        Binding(
+            get: { min(max(vm.input.serveDate.timeIntervalSince(vm.now) / 3600, 1), 24) },
+            set: { vm.input.serveDate = vm.now.addingTimeInterval($0 * 3600) }
+        )
+    }
+
+    /// Maps the None/Poolish/Biga segmented control onto the input.
+    private var prefermentChoice: Binding<PrefermentChoice> {
+        Binding(
+            get: {
+                guard vm.input.usePreferment else { return .none }
+                return vm.input.preferment == .biga ? .biga : .poolish
+            },
+            set: { vm.setPreferment($0) }
+        )
+    }
+
+    private func pct(_ f: Double) -> String { String(format: "%.1f%%", f * 100) }
+
+    private func grams(_ g: Double) -> String { Units.weight(g, metric: vm.metric) }
+
+    private func lengthText(_ v: Double) -> String {
+        vm.input.lengthUnit == .cm ? String(format: "%.0f cm", v) : String(format: "%.1f in", v)
+    }
+}
+
+#Preview {
+    ContentView()
+}
