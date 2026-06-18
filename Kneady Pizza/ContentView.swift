@@ -304,6 +304,16 @@ struct ContentView: View {
             Spacer()
             HStack(spacing: 4) {
                 Button {
+                    vm.saveFavourite()      // one-tap update of My Favourite
+                    Haptics.success()
+                } label: {
+                    Image(systemName: vm.hasFavourite ? "star.fill" : "star")
+                        .font(.rounded(16, weight: .medium))
+                        .foregroundStyle(Palette.amber)
+                        .frame(width: 36, height: 40)
+                }
+                .buttonStyle(.plain)
+                Button {
                     activeSheet = .planner
                     Haptics.tap()
                 } label: {
@@ -1083,15 +1093,15 @@ struct ContentView: View {
                      onToggleDone: { toggleStepDone($0) })
     }
 
-    /// Tap a step to mark it (and the steps before it) done; tap again to undo
-    /// it and the steps before it.
+    /// Tap a step to mark it (and the steps before it) done; tap again to
+    /// un-check it and the steps after it, leaving the earlier ones done.
     private func toggleStepDone(_ i: Int) {
         Haptics.tap()
         withAnimation(.easeInOut(duration: 0.2)) {
             if completedSteps.contains(i) {
-                for j in 0...i { completedSteps.remove(j) }
+                completedSteps = completedSteps.filter { $0 < i }   // clear i and everything below
             } else {
-                for j in 0...i { completedSteps.insert(j) }
+                for j in 0...i { completedSteps.insert(j) }          // mark i and everything above
             }
         }
     }

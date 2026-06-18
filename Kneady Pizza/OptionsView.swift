@@ -25,6 +25,12 @@ struct MenuDrawer: View {
                     .padding(18)
                     .softCard()
 
+                    menuLink(icon: "star.fill",
+                             title: "My Favourite",
+                             subtitle: "Save your whole setup and reuse it any time.") {
+                        FavouriteView(vm: vm)
+                    }
+
                     // Look — promoted to the top level for quick access.
                     VStack(alignment: .leading, spacing: 10) {
                         Text("LOOK")
@@ -86,12 +92,6 @@ struct MenuDrawer: View {
                              title: "Settings",
                              subtitle: "Units, oven, reminders, pop-ups & first-time setup") {
                         SettingsView(vm: vm, onReintro: onReintro)
-                    }
-
-                    menuLink(icon: "star.fill",
-                             title: "My Favourite",
-                             subtitle: "Save your whole setup and reuse it any time.") {
-                        FavouriteView(vm: vm)
                     }
 
                     menuLink(icon: "book.closed.fill",
