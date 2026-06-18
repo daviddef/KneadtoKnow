@@ -64,6 +64,7 @@ struct ContentView: View {
 
                                 ResultView(result: vm.result, metric: vm.metric,
                                            toppingLines: vm.toppingLines(),
+                                           pizzaLegend: vm.pizzaLegend(),
                                            extras: vm.selectedExtras,
                                            hasSelection: vm.selectedPizzaTotal > 0,
                                            shareText: vm.shareText(),

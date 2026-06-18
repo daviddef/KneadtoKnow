@@ -554,6 +554,12 @@ final class DoughViewModel: ObservableObject {
         RecipeCatalog.toppingShoppingList(styleID: input.style.id, selection: pizzaSelection, sizeFactor: sizeFactor)
     }
 
+    /// Names of the selected pizzas in order — the legend for the "pizza #"
+    /// shown next to each topping (number = index + 1).
+    func pizzaLegend() -> [String] {
+        RecipeCatalog.selectedRecipes(styleID: input.style.id, selection: pizzaSelection).map { $0.name }
+    }
+
     /// Each selected pizza with its toppings in application order (per pizza),
     /// for the "Top It" step of the directions.
     func toppingPlan() -> [PizzaToppingPlan] {

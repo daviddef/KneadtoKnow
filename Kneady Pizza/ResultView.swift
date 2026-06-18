@@ -7,10 +7,15 @@ struct ResultView: View {
     let result: DoughResult
     var metric: Bool = true
     var toppingLines: [ShoppingLine] = []
+    var pizzaLegend: [String] = []
     var extras: [String] = []
     var hasSelection: Bool = false
     var shareText: String = ""
     var onPlan: () -> Void = {}
+
+    private var legendText: String {
+        pizzaLegend.enumerated().map { "\($0.offset + 1) \($0.element)" }.joined(separator: " · ")
+    }
 
     private func grams(_ g: Double) -> String { Units.weight(g, metric: metric) }
     private var guidance: WeightGuidance {
@@ -56,10 +61,10 @@ struct ResultView: View {
     // MARK: Toppings
 
     private var toppingsBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack {
                 Text("Toppings")
-                    .font(.rounded(16, weight: .bold))
+                    .font(.rounded(15, weight: .bold))
                     .foregroundStyle(Palette.accent)
                 Spacer()
                 Button { onPlan() } label: {
@@ -71,25 +76,40 @@ struct ResultView: View {
             }
 
             if hasSelection {
-                HStack(spacing: 5) {
-                    Image(systemName: "square.3.layers.3d.top.filled")
-                    Text("In the order they go on — top of the list goes on first.")
+                if pizzaLegend.count > 1 {
+                    Text(legendText)
+                        .font(.rounded(10, weight: .semibold))
+                        .foregroundStyle(Palette.textSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    HStack(spacing: 5) {
+                        Image(systemName: "square.3.layers.3d.top.filled")
+                        Text("In the order they go on.")
+                    }
+                    .font(.rounded(10))
+                    .foregroundStyle(Palette.textSoft)
                 }
-                .font(.rounded(11))
-                .foregroundStyle(Palette.textSoft)
 
                 ForEach(Array(toppingLines.enumerated()), id: \.element.id) { idx, line in
-                    if idx > 0 { Divider().overlay(Palette.textSoft.opacity(0.1)) }
-                    HStack {
+                    if idx > 0 { Divider().overlay(Palette.textSoft.opacity(0.08)) }
+                    HStack(spacing: 6) {
                         Text(line.name)
-                            .font(.rounded(15, weight: .medium))
+                            .font(.rounded(13, weight: .medium))
                             .foregroundStyle(Palette.text)
-                        Spacer()
+                        if pizzaLegend.count > 1 && !line.pizzas.isEmpty {
+                            Text(line.pizzas.map(String.init).joined(separator: ","))
+                                .font(.rounded(10, weight: .bold))
+                                .foregroundStyle(Palette.accent)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Capsule().fill(Palette.accent.opacity(0.14)))
+                        }
+                        Spacer(minLength: 6)
                         Text(grams(line.grams))
-                            .font(.rounded(15, weight: .semibold))
+                            .font(.rounded(13, weight: .semibold))
                             .foregroundStyle(Palette.text)
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 4)
                 }
                 extrasList
             } else if !extras.isEmpty {

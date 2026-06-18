@@ -40,6 +40,8 @@ struct ShoppingLine: Identifiable, Hashable {
     let grams: Double
     /// Optional packaging hint, e.g. "≈ 2 × 1 kg bags".
     let hint: String?
+    /// Which selected pizzas (1-based, matching the legend) use this topping.
+    var pizzas: [Int] = []
 }
 
 enum RecipeCatalog {
@@ -203,13 +205,17 @@ enum RecipeCatalog {
     /// sequence they go onto the pizza, and scaled by pizza size.
     static func toppingShoppingList(styleID: String, selection: [String: Int], sizeFactor: Double) -> [ShoppingLine] {
         let cheeseFirst = (styleID == "detroit")
-        let all = recipes(for: styleID)
+        let chosen = selectedRecipes(styleID: styleID, selection: selection)   // legend order
+        let number = Dictionary(uniqueKeysWithValues: chosen.enumerated().map { ($1.id, $0 + 1) })
+
         var totals: [String: Double] = [:]
-        for recipe in all {
-            guard let count = selection[recipe.id], count > 0 else { continue }
+        var sources: [String: Set<Int>] = [:]
+        for recipe in chosen {
+            let count = selection[recipe.id] ?? 0
+            let num = number[recipe.id] ?? 0
             for t in recipe.toppings {
-                let grams = t.gramsPerPizza * Double(count) * (t.scalesWithSize ? sizeFactor : 1)
-                totals[t.name, default: 0] += grams
+                totals[t.name, default: 0] += t.gramsPerPizza * Double(count) * (t.scalesWithSize ? sizeFactor : 1)
+                sources[t.name, default: []].insert(num)
             }
         }
         return totals.keys
@@ -217,6 +223,13 @@ enum RecipeCatalog {
                 let ra = layerRank(a, cheeseFirst: cheeseFirst), rb = layerRank(b, cheeseFirst: cheeseFirst)
                 return ra == rb ? a < b : ra < rb
             }
-            .map { ShoppingLine(name: $0, grams: totals[$0] ?? 0, hint: nil) }
+            .map { ShoppingLine(name: $0, grams: totals[$0] ?? 0, hint: nil,
+                                pizzas: (sources[$0] ?? []).sorted()) }
+    }
+
+    /// The selected recipes in catalogue (legend) order — index + 1 is the
+    /// "pizza number" shown next to each topping.
+    static func selectedRecipes(styleID: String, selection: [String: Int]) -> [PizzaRecipe] {
+        recipes(for: styleID).filter { (selection[$0.id] ?? 0) > 0 }
     }
 }
