@@ -7,9 +7,7 @@ enum SectionCopy {
         "Pizza style":         "What are we making?",
         "Pizzas & size":       "How Hungry are you?",
         "Yeast or starter":    "The rise stuff",
-        "Recipe proportions":  "The mix",
         "When will you serve?": "When's dinner?",
-        "Directions":          "Let's get cooking",
     ]
 
     /// The playful heading in Vibrant, the plain one in Classic.

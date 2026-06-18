@@ -57,7 +57,7 @@ enum Scheduler {
         let pref = prefermentRest(input)
         let auto = input.autolyseActive ? autolyseHours : 0
         switch input.ferment {
-        case .sameDay: return pref + auto + clamp(14 * tf, 3, 60) + clamp(4 * tf, 1, 12)
+        case .sameDay: return pref + auto + clamp(8 * tf, 2, 48) + clamp(3 * tf, 1, 10)
         case .cold:    return pref + auto + coldRoomBulk + 24 + coldWarmUp
         case .quick:   return pref + auto + 1.0 + 0.5
         }
@@ -129,7 +129,7 @@ enum Scheduler {
                 let f = tempFactor(t)
                 let pf = input.prefermentActive ? clamp(input.preferment.restBaseHours * f, 6, 24) : 0
                 let a = input.autolyseActive ? autolyseHours : 0
-                return pf + a + clamp(14 * f, 3, 60) + clamp(4 * f, 1, 12)
+                return pf + a + clamp(8 * f, 2, 48) + clamp(3 * f, 1, 10)
             }
             var proofTemp = userTemp
             if available + 0.5 < sameDayIdeal(at: userTemp) {
@@ -139,8 +139,8 @@ enum Scheduler {
             }
             let warmed = proofTemp > userTemp + 0.01
             let f = tempFactor(proofTemp)
-            var bulk = clamp(14 * f, 3, 60)
-            var proof = clamp(4 * f, 1, 12)
+            var bulk = clamp(8 * f, 2, 48)
+            var proof = clamp(3 * f, 1, 10)
             prefRest = input.prefermentActive ? clamp(input.preferment.restBaseHours * f, 6, 24) : 0
             let idealWarm = prefRest + (input.autolyseActive ? autolyseHours : 0) + bulk + proof
             if available + 0.5 < idealWarm && idealWarm > 0 {

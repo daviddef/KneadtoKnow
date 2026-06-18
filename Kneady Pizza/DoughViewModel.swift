@@ -511,7 +511,7 @@ final class DoughViewModel: ObservableObject {
         case "The Dough":
             let stage = r.prefermentSplit != nil ? r.stages.last : r.stages.first
             let all = stage?.ingredients ?? []
-            guard input.useAutolyse else { return all }
+            guard input.autolyseActive else { return all }
             // The flour & water are already resting as the autolyse — fold them
             // back in as one line so it's clear what's being combined.
             let autoGrams = all.filter { $0.name == "Flour" || $0.name == "Water" }

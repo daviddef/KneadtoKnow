@@ -149,19 +149,25 @@ struct DoughInput {
             usePreferment = false
             useAutolyse = false
         }
+
+        // Keep-it-simple favours a forgiving, biggest-within-tolerance ball for
+        // round pizzas (easier for beginners to stretch without tearing).
+        if keepItSimple && style.shape == .round { ballWeight = 280 }
     }
 
     /// Pre-ferments only apply to commercial yeasts — sourdough is itself one,
     /// a Quick dough is too fast for a long pre-ferment rest, and gluten-free
     /// dough has no gluten for a biga/poolish to strengthen.
     var prefermentAvailable: Bool { !glutenFree && !yeast.isSourdough && ferment != .quick }
-    var prefermentActive: Bool { usePreferment && prefermentAvailable }
+    /// Keep-it-simple mode is always a direct dough — no poolish/biga.
+    var prefermentActive: Bool { usePreferment && prefermentAvailable && !keepItSimple }
 
     /// Autolyse is skipped for a Quick dough (it's too fast, and the warm-water
     /// quick mix takes over). The toggle value is kept so switching back to a
     /// Warm/Cold proof restores the previous choice.
     var autolyseAvailable: Bool { ferment != .quick }
-    var autolyseActive: Bool { useAutolyse && autolyseAvailable }
+    /// Keep-it-simple mode skips the autolyse too.
+    var autolyseActive: Bool { useAutolyse && autolyseAvailable && !keepItSimple }
 }
 
 // MARK: - Weight guidance

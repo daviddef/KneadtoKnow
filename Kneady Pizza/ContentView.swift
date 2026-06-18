@@ -159,6 +159,10 @@ struct ContentView: View {
             // Recipe proportions: open by default in advanced, closed in simple.
             if vm.input.keepItSimple { collapsed.insert("proportions") }
             else { collapsed.remove("proportions") }
+            // Simple mode auto-sizes to a forgiving, biggest-within-tolerance ball.
+            if vm.input.keepItSimple && vm.input.style.shape == .round {
+                vm.input.ballWeight = 280
+            }
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
@@ -172,7 +176,7 @@ struct ContentView: View {
                 // a Quick proof ready in 12 hours. Simple mode also adopts the
                 // friendly Vibrant look.
                 vm.input.sizeMode = .weight
-                vm.input.ballWeight = vm.input.style.defaultBallWeight
+                vm.input.ballWeight = vm.input.style.shape == .round ? 280 : vm.input.style.defaultBallWeight
                 vm.applySimpleProofDefault()
                 themeManager.theme = .fun
                 // Simple mode hides the section anyway — keep it closed.
@@ -261,18 +265,22 @@ struct ContentView: View {
                     HStack(alignment: .top, spacing: 12) {
                         Text(popupEmoji).font(.system(size: 30))
                         Text(jokeText)
-                            .font(.rounded(13, weight: .medium))
-                            .foregroundStyle(Palette.text)
+                            .font(.rounded(13, weight: .semibold))
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                         Image(systemName: "xmark.circle.fill")
                             .font(.rounded(16))
-                            .foregroundStyle(Palette.textSoft)
+                            .foregroundStyle(.white.opacity(0.85))
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .softCard(cornerRadius: 22)
+                    .background(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(Palette.accentFill)
+                    )
+                    .shadow(color: Palette.shadowDark, radius: 14, x: 0, y: 7)
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
@@ -798,7 +806,7 @@ struct ContentView: View {
         if vm.input.oil   > 0 { proportionsSummary += " · \(pc(vm.input.oil)) oil" }
         if vm.input.honey > 0 { proportionsSummary += " · \(pc(vm.input.honey)) honey" }
 
-        return InputCard(index: 5, title: SectionCopy.title("Recipe proportions"), info: .recipe, onInfo: showInfo,
+        return InputCard(index: 5, title: SectionCopy.title("Dough Proportions"), info: .recipe, onInfo: showInfo,
                   summary: proportionsSummary,
                   collapsed: collapsed.contains("proportions"),
                   onToggleCollapse: { toggle("proportions") }) {
@@ -864,16 +872,12 @@ struct ContentView: View {
                                  name: String? = nil,
                                  preferment: Double? = nil, dough: Double? = nil,
                                  finalDoughOnly: Bool = false) -> some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 4) {
             TactileSlider(title: title, value: value, range: range, step: step,
-                          valueText: pct(value.wrappedValue),
+                          valueText: "\(pct(value.wrappedValue)) · \(grams(gramValue))",
                           tint: guidance.color)
             if let preferment, let dough {
                 splitLine(name: name ?? "Pre-ferment", preferment: preferment, dough: dough)
-            } else if finalDoughOnly && vm.input.prefermentActive {
-                captionLine("≈ \(grams(gramValue)) · all in final dough")
-            } else {
-                captionLine("≈ \(grams(gramValue))")
             }
             if guidance.level != .ideal {
                 HStack(spacing: 5) {
@@ -1060,7 +1064,7 @@ struct ContentView: View {
     // MARK: 6 — Directions (the timeline)
 
     private var directionsSection: some View {
-        InputCard(index: idxDirections, title: SectionCopy.title("Directions"), info: .schedule, onInfo: showInfo,
+        InputCard(index: idxDirections, title: SectionCopy.title("Cooking Directions"), info: .schedule, onInfo: showInfo,
                   summary: directionsSummary,
                   collapsed: collapsed.contains("directions"),
                   onToggleCollapse: { toggle("directions") }) {
@@ -1241,7 +1245,7 @@ struct ContentView: View {
 
     /// The steps, just below the fold — the banner taps down to here.
     private var simpleDirectionsCard: some View {
-        simpleCard(title: "Directions", info: .schedule) {
+        simpleCard(title: "Cooking Directions", info: .schedule) {
             timelineView
         }
     }
