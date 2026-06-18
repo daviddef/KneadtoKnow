@@ -281,12 +281,15 @@ struct ContentView: View {
         .padding(.bottom, 6)
     }
 
-    // Always-visible total — tap for tailored tips; arrow jumps to the directions.
+    // Always-visible total — tap to jump to the pizza image & summary; the
+    // lightbulb gives tailored tips.
     private func totalBanner(_ proxy: ScrollViewProxy) -> some View {
         HStack(spacing: 10) {
             Button {
                 Haptics.tap()
-                activeSheet = .selectionTips
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                    proxy.scrollTo("summary", anchor: .top)
+                }
             } label: {
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 1) {
@@ -313,9 +316,9 @@ struct ContentView: View {
                         .font(.rounded(12))
                         .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
-                    Image(systemName: "lightbulb.fill")
-                        .font(.rounded(14, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.9))
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.rounded(16, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.7))
                 }
                 .contentShape(Rectangle())
             }
@@ -323,11 +326,9 @@ struct ContentView: View {
 
             Button {
                 Haptics.tap()
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                    proxy.scrollTo("summary", anchor: .top)
-                }
+                activeSheet = .selectionTips
             } label: {
-                Image(systemName: "arrow.down.circle.fill")
+                Image(systemName: "lightbulb.fill")
                     .font(.rounded(20, weight: .medium))
                     .foregroundStyle(.white.opacity(0.9))
             }
