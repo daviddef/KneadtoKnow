@@ -275,8 +275,18 @@ final class DoughViewModel: ObservableObject {
         rows.append(("Coaching tips", i.tipsEnabled ? "On" : "Off"))
         rows.append(("Humour", i.humourEnabled ? i.humourLevel.label : "Off"))
 
-        let selected = (fav.pizzaSelection ?? [:]).values.reduce(0, +)
-        if selected > 0 { rows.append(("Toppings", "\(selected) pizza\(selected == 1 ? "" : "s") planned")) }
+        let selection = fav.pizzaSelection ?? [:]
+        let selected = selection.values.reduce(0, +)
+        if selected > 0 {
+            let named = RecipeCatalog.recipes(for: fav.styleID).compactMap { r -> String? in
+                guard let c = selection[r.id], c > 0 else { return nil }
+                return "\(c)× \(r.name)"
+            }
+            let value = named.isEmpty
+                ? "\(selected) pizza\(selected == 1 ? "" : "s") planned"
+                : named.joined(separator: ", ")
+            rows.append(("Pizzas", value))
+        }
         let extras = fav.extras ?? []
         if !extras.isEmpty { rows.append(("Extras", extras.joined(separator: ", "))) }
 

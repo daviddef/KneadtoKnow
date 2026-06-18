@@ -50,6 +50,7 @@ struct ContentView: View {
                                 simpleDirectionsCard
                                     .id("directions")
                                 StyleHeroImage(style: vm.input.style)
+                                    .id("summary")
                             } else {
                                 styleSection
                                 sizeSection
@@ -59,6 +60,7 @@ struct ContentView: View {
                                 directionsSection
                                     .id("directions")
                                 StyleHeroImage(style: vm.input.style)
+                                    .id("summary")
 
                                 ResultView(result: vm.result, metric: vm.metric,
                                            toppingLines: vm.toppingLines(),
@@ -322,8 +324,7 @@ struct ContentView: View {
             Button {
                 Haptics.tap()
                 withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                    collapsed.remove("directions")
-                    proxy.scrollTo("directions", anchor: .top)
+                    proxy.scrollTo("summary", anchor: .top)
                 }
             } label: {
                 Image(systemName: "arrow.down.circle.fill")
@@ -493,7 +494,7 @@ struct ContentView: View {
                   onToggleCollapse: { toggle("size") }) {
             VStack(spacing: 18) {
                 TactileStepper(
-                    title: vm.input.keepItSimple ? "How many pizzas?" : (shape == .round ? "Dough balls" : "Pans"),
+                    title: vm.input.keepItSimple ? (shape == .round ? "How many pizzas?" : "How many pans?") : (shape == .round ? "Dough balls" : "Pans"),
                     value: $vm.input.ballCount,
                     range: 1...30
                 )
@@ -968,7 +969,41 @@ struct ContentView: View {
             body = step.detail
         }
         return InfoTopic(id: "step-\(step.id)", title: step.title, body: body,
-                         gotcha: step.gotcha.isEmpty ? [] : [step.gotcha])
+                         gotcha: step.gotcha.isEmpty ? [] : [step.gotcha],
+                         tools: stepTools(step.title))
+    }
+
+    /// The kit that helps with a given timeline step.
+    private func stepTools(_ title: String) -> [String] {
+        if title.hasPrefix("Fold ") {
+            return ["A small bowl of water for your hand", "A roomy bowl or tub with a lid"]
+        }
+        switch title {
+        case "The Poolish", "The Biga":
+            return ["Digital scale (0.1 g for the yeast)", "Bowl + whisk or fork", "Cover or a lidded tub"]
+        case "Autolyse":
+            return ["Mixing bowl", "Cover or cling film"]
+        case "The Dough":
+            return ["Digital kitchen scale", "Large mixing bowl", "Dough scraper", "A little olive oil"]
+        case "Bulk Rise":
+            return ["A lidded tub or covered bowl", "A warm-ish spot out of draughts"]
+        case "Ball Roll":
+            return ["Dough scraper", "Fine semolina", "An airtight tray or proofing boxes"]
+        case "Into Pans", "Into the Pan":
+            return ["A metal baking pan", "Olive oil to coat it well"]
+        case "Ready It":
+            return ["Just counter space — let it warm up"]
+        case "Shape It":
+            return ["Fine semolina (not flour)", "A pizza peel"]
+        case "Dimple & Brine":
+            return ["Well-oiled fingers", "A small bowl for the oil-water-salt brine"]
+        case "Top It":
+            return ["A ladle or spoon for sauce", "A box grater for the cheese"]
+        case "Bake It":
+            return ["A pizza stone or steel", "A pizza peel", "Oven gloves"]
+        default:
+            return []
+        }
     }
 
     /// Plain-English explainer for the concept behind a step.
@@ -1041,7 +1076,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 16) {
             styleDropdownButton
             glutenFreeControls
-            TactileStepper(title: "How many pizzas?", value: $vm.input.ballCount, range: 1...30)
+            TactileStepper(title: vm.input.style.shape == .round ? "How many pizzas?" : "How many pans?", value: $vm.input.ballCount, range: 1...30)
 
             Divider().overlay(Palette.textSoft.opacity(0.15))
 

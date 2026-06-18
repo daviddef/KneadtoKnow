@@ -193,17 +193,27 @@ enum Scheduler {
             let foldWindow = min(2.0, max(0, bulk - 0.5) * 0.6)
             if foldWindow >= 0.5 {
                 let leadIn = 0.25
-                let after = max(0, bulk - foldWindow - leadIn)
                 let mix = segs[i]
+                // One step per stretch-and-fold, ~30 min apart, then the long rise.
+                let nFolds = max(2, min(4, Int((foldWindow / 0.5).rounded())))
+                let foldRest = foldWindow / Double(nFolds)
+                let after = max(0, bulk - foldWindow - leadIn)
                 segs[i] = Seg(icon: mix.icon, title: mixTitle, detail: mix.detail,
                               rest: leadIn, loc: mix.loc, active: true)
-                let folds = Seg(icon: "hands.and.sparkles.fill", title: "Stretch & Folds",
-                                detail: "Do 3–4 sets of stretch-and-folds, about every 30 minutes. With a wet hand, grab one side of the dough, stretch it up and fold it over to the middle; turn the bowl a quarter-turn and repeat all the way round. The dough firms up and traps air with each set.",
-                                rest: foldWindow, loc: mix.loc, active: true)
-                let rise = Seg(icon: "wind", title: "Bulk Rise",
-                               detail: "Now leave the dough undisturbed and covered until puffy and well risen — almost doubled and full of bubbles.",
-                               rest: after, loc: mix.loc, active: false)
-                segs.insert(contentsOf: [folds, rise], at: i + 1)
+                var inserts: [Seg] = []
+                for k in 1...nFolds {
+                    let tail = k == nFolds
+                        ? "Last set — the dough should feel noticeably smoother and stronger now."
+                        : "It firms up and traps a little more air each time."
+                    inserts.append(Seg(icon: "hands.and.sparkles.fill",
+                                       title: "Fold \(k) of \(nFolds)",
+                                       detail: "With a wet hand, grab one side of the dough, stretch it up and fold it over to the middle; turn the bowl a quarter-turn and repeat all the way round. \(tail)",
+                                       rest: foldRest, loc: mix.loc, active: true))
+                }
+                inserts.append(Seg(icon: "wind", title: "Bulk Rise",
+                                   detail: "Now leave the dough undisturbed and covered until puffy and well risen — almost doubled and full of bubbles.",
+                                   rest: after, loc: mix.loc, active: false))
+                segs.insert(contentsOf: inserts, at: i + 1)
             }
         }
 
@@ -288,7 +298,7 @@ enum Scheduler {
             return "Dust with semolina, not flour (flour gets absorbed and sticks). Ball them tight and smooth so they hold shape, not spread."
         case "Into the Pan":
             return "Use a properly oiled pan — focaccia sticks fiercely otherwise. Don't force it to the edges yet; it'll relax and spread as it proofs."
-        case "Stretch & Folds":
+        case let t where t.hasPrefix("Fold "):
             return "Wet your hand so the dough doesn't stick, and be gentle — you're building strength, not knocking the air out. If it's already smooth and elastic, you can stop early."
         case "Bulk Rise":
             return "Go by the look, not the clock — it's ready when puffy and bubbly. A cold kitchen takes longer; a warm one races ahead."

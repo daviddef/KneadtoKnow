@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The merged "what you'll make & buy" card: total dough, the staged recipe,
 /// and the topping shopping list with planner + share actions.
@@ -17,7 +18,7 @@ struct ResultView: View {
     }
 
     var body: some View {
-        VStack(spacing: 22) {
+        VStack(spacing: 16) {
             headline
 
             ForEach(Array(result.stages.enumerated()), id: \.element.id) { _, stage in
@@ -28,24 +29,22 @@ struct ResultView: View {
 
             toppingsBlock
         }
-        .padding(24)
+        .padding(20)
         .softCard(cornerRadius: 28)
     }
 
     // MARK: Headline
 
     private var headline: some View {
-        VStack(spacing: 6) {
-            Text("Total dough")
-                .font(.rounded(14, weight: .medium))
-                .foregroundStyle(Palette.textSoft)
+        VStack(spacing: 3) {
             Text(grams(result.totalWeight))
-                .font(.rounded(44, weight: .bold))
+                .font(.rounded(34, weight: .bold))
                 .foregroundStyle(Palette.accent)
                 .contentTransition(.numericText())
-            Text("\(result.ballCount) × \(grams(result.ballWeight)) \(result.shape.nounPlural)")
-                .font(.rounded(13, weight: .medium))
+            Text("Total dough · \(result.ballCount) × \(grams(result.ballWeight)) \(result.shape.nounPlural)")
+                .font(.rounded(12, weight: .medium))
                 .foregroundStyle(guidance.color)
+                .multilineTextAlignment(.center)
             Text(guidance.message)
                 .font(.rounded(11))
                 .foregroundStyle(Palette.textSoft)
@@ -156,24 +155,24 @@ struct ResultView: View {
                 if idx > 0 {
                     Divider().overlay(Palette.textSoft.opacity(0.12))
                 }
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.name)
-                            .font(.rounded(16, weight: .medium))
-                            .foregroundStyle(Palette.text)
-                        if let note = item.note {
-                            Text(note)
-                                .font(.rounded(12))
-                                .foregroundStyle(Palette.textSoft)
-                        }
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(item.name)
+                        .font(.rounded(14, weight: .medium))
+                        .foregroundStyle(Palette.text)
+                    if let note = item.note {
+                        Text(note)
+                            .font(.rounded(11))
+                            .foregroundStyle(Palette.textSoft)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
-                    Spacer()
+                    Spacer(minLength: 6)
                     Text(grams(item.grams))
-                        .font(.rounded(17, weight: .semibold))
+                        .font(.rounded(15, weight: .semibold))
                         .foregroundStyle(Palette.text)
                         .contentTransition(.numericText())
                 }
-                .padding(.vertical, 12)
+                .padding(.vertical, 6)
             }
         }
     }
@@ -186,25 +185,40 @@ struct ShareMenuButton: View {
     var iconSize: CGFloat = 16
     @Environment(\.openURL) private var openURL
 
+    private var encodedSubject: String {
+        "Kneady Pizza shopping list".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+    }
     private var encodedBody: String {
         shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
     }
     private var smsURL: URL? { URL(string: "sms:&body=\(encodedBody)") }
     private var mailURL: URL? {
-        let subject = "Kneady Pizza shopping list".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return URL(string: "mailto:?subject=\(subject)&body=\(encodedBody)")
+        URL(string: "mailto:?subject=\(encodedSubject)&body=\(encodedBody)")
+    }
+    private var gmailURL: URL? {
+        URL(string: "googlegmail://co?subject=\(encodedSubject)&body=\(encodedBody)")
+    }
+
+    /// Open the Gmail app if it's installed; otherwise fall back to the default
+    /// mail app so the button always does something useful.
+    private func openGmail() {
+        guard let gmailURL else { return }
+        UIApplication.shared.open(gmailURL, options: [:]) { ok in
+            if !ok, let mailURL { openURL(mailURL) }
+        }
     }
 
     var body: some View {
         Menu {
+            if let mailURL {
+                Button { openURL(mailURL) } label: { Label("Email (default app)", systemImage: "envelope.fill") }
+            }
+            Button { openGmail() } label: { Label("Gmail", systemImage: "envelope.badge.fill") }
             if let smsURL {
                 Button { openURL(smsURL) } label: { Label("Messages", systemImage: "message.fill") }
             }
-            if let mailURL {
-                Button { openURL(mailURL) } label: { Label("Email", systemImage: "envelope.fill") }
-            }
             ShareLink(item: shareText) {
-                Label("More options…", systemImage: "ellipsis.circle")
+                Label("More options & people…", systemImage: "person.2.fill")
             }
         } label: {
             Image(systemName: "square.and.arrow.up")

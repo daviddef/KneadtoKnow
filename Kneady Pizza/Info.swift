@@ -48,6 +48,8 @@ struct InfoTopic: Identifiable, Equatable {
     var definitions: [InfoDefinition] = []
     /// One or more "things that will drive you crazy" — shown as bullet points.
     let gotcha: [String]
+    /// Kit that helps with this step — shown as a callout. Empty for most topics.
+    var tools: [String] = []
 
     static let style = InfoTopic(id: "style", title: "Pizza style",
         body: "Each style sets a recipe profile — hydration, salt, oil, honey — plus its thickness and the yeasts that suit it.\n\nMaths: these become the baker's percentages every other number is built from.",
@@ -171,6 +173,10 @@ struct InfoSheet: View {
                         definitionsSection
                     }
 
+                    if !topic.tools.isEmpty {
+                        toolsSection
+                    }
+
                     if !topic.gotcha.isEmpty {
                         gotchaSection
                     }
@@ -231,6 +237,36 @@ struct InfoSheet: View {
                 .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(def.tint.color.opacity(0.30), lineWidth: 1))
             }
         }
+    }
+
+    private var toolsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "wrench.and.screwdriver.fill")
+                Text("Kit for this step")
+            }
+            .font(.rounded(13, weight: .bold))
+            .foregroundStyle(Palette.sage)
+
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(topic.tools, id: \.self) { tool in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.rounded(12))
+                            .foregroundStyle(Palette.sage)
+                        Text(tool)
+                            .font(.rounded(14))
+                            .foregroundStyle(Palette.text)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.sage.opacity(0.30), lineWidth: 1))
     }
 
     private var gotchaSection: some View {

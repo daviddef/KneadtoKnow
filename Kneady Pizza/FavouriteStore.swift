@@ -31,6 +31,9 @@ struct SavedRecipe: Codable {
     var humourEnabled: Bool? = nil
     var humourLevel: String? = nil
     var tipsEnabled: Bool? = nil
+    var glutenFree: Bool? = nil
+    var binder: String? = nil
+    var binderInBlend: Bool? = nil
 }
 
 /// Remembers whether the favourite should update itself automatically.
@@ -95,7 +98,10 @@ extension DoughInput {
             keepItSimple: keepItSimple,
             humourEnabled: humourEnabled,
             humourLevel: humourLevel.rawValue,
-            tipsEnabled: tipsEnabled
+            tipsEnabled: tipsEnabled,
+            glutenFree: glutenFree,
+            binder: binder.rawValue,
+            binderInBlend: binderInBlend
         )
     }
 
@@ -127,6 +133,9 @@ extension DoughInput {
         i.humourEnabled = r.humourEnabled ?? true
         i.humourLevel = r.humourLevel.flatMap(HumourLevel.init) ?? .some
         i.tipsEnabled = r.tipsEnabled ?? true
+        i.glutenFree = r.glutenFree ?? false
+        i.binder = r.binder.flatMap(BinderType.init) ?? .xanthan
+        i.binderInBlend = r.binderInBlend ?? false
         return i
     }
 }
