@@ -16,6 +16,7 @@ struct ResultView: View {
     /// Estimated cost: total and per-pizza, pre-formatted in the local currency.
     var costTotal: String? = nil
     var costPerPizza: String? = nil
+    var currencyCode: String = ""
     var onEditPrices: () -> Void = {}
 
     private func grams(_ g: Double) -> String { Units.weight(g, metric: metric) }
@@ -58,15 +59,20 @@ struct ResultView: View {
 
             if let costTotal {
                 Button { onEditPrices() } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "tag.fill").font(.rounded(11))
-                        Text("≈ \(costTotal)" + (costPerPizza.map { " · \($0)/pizza" } ?? ""))
-                            .font(.rounded(12, weight: .semibold))
-                        Image(systemName: "pencil").font(.rounded(10))
+                    VStack(spacing: 1) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "tag.fill").font(.rounded(11))
+                            Text("≈ \(costTotal)" + (costPerPizza.map { " · \($0)/pizza" } ?? ""))
+                                .font(.rounded(12, weight: .semibold))
+                            Image(systemName: "pencil").font(.rounded(10))
+                        }
+                        Text("estimated ingredient cost\(currencyCode.isEmpty ? "" : " · \(currencyCode)") · tap to edit")
+                            .font(.rounded(9, weight: .medium))
+                            .opacity(0.8)
                     }
                     .foregroundStyle(Palette.sage)
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 5)
+                    .padding(.vertical, 6)
                     .background(Capsule().fill(Palette.sage.opacity(0.14)))
                 }
                 .buttonStyle(.plain)

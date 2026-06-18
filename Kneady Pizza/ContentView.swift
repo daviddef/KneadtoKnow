@@ -64,6 +64,7 @@ struct ContentView: View {
                                            onPlan: { activeSheet = .planner },
                                            costTotal: costStrings.total,
                                            costPerPizza: costStrings.perPizza,
+                                           currencyCode: Locale.current.currency?.identifier ?? "USD",
                                            onEditPrices: { activeSheet = .prices })
                                     .id("summary")
                             } else {
@@ -91,6 +92,7 @@ struct ContentView: View {
                                            onPlan: { activeSheet = .planner },
                                            costTotal: costStrings.total,
                                            costPerPizza: costStrings.perPizza,
+                                           currencyCode: Locale.current.currency?.identifier ?? "USD",
                                            onEditPrices: { activeSheet = .prices })
                             }
 

@@ -31,22 +31,22 @@ enum PriceCategory: String, CaseIterable, Codable {
     /// these to match their shop.
     var defaultPricePerKg: Double {
         switch self {
-        case .flour:         return 2.0
+        case .flour:         return 2.5
         case .water:         return 0.0
-        case .salt:          return 2.0
-        case .yeast:         return 25.0
-        case .oil:           return 12.0
-        case .sweetener:     return 10.0
-        case .binder:        return 50.0
-        case .sauce:         return 4.0
-        case .cheese:        return 12.0
-        case .premiumCheese: return 25.0
-        case .meat:          return 24.0
-        case .veg:           return 6.0
-        case .herbs:         return 30.0
-        case .bread:         return 4.0
-        case .sweet:         return 10.0
-        case .other:         return 8.0
+        case .salt:          return 3.0
+        case .yeast:         return 35.0
+        case .oil:           return 16.0
+        case .sweetener:     return 16.0
+        case .binder:        return 90.0
+        case .sauce:         return 6.0
+        case .cheese:        return 14.0
+        case .premiumCheese: return 38.0
+        case .meat:          return 34.0
+        case .veg:           return 9.0
+        case .herbs:         return 45.0
+        case .bread:         return 7.0
+        case .sweet:         return 16.0
+        case .other:         return 12.0
         }
     }
 
@@ -132,6 +132,9 @@ struct PriceListView: View {
                                 .font(.rounded(15, weight: .medium))
                                 .foregroundStyle(Palette.text)
                             Spacer()
+                            Text(Locale.current.currencySymbol ?? "$")
+                                .font(.rounded(14, weight: .medium))
+                                .foregroundStyle(Palette.textSoft)
                             TextField("0", value: Binding(
                                 get: { prices.pricePerKg(cat) },
                                 set: { prices.setPrice(cat, $0) }
@@ -140,7 +143,7 @@ struct PriceListView: View {
                                 .multilineTextAlignment(.trailing)
                                 .font(.rounded(15, weight: .semibold))
                                 .foregroundStyle(Palette.accent)
-                                .frame(width: 72)
+                                .frame(width: 64)
                             Text("/kg")
                                 .font(.rounded(12))
                                 .foregroundStyle(Palette.textSoft)
