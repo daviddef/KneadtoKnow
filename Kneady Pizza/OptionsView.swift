@@ -25,9 +25,66 @@ struct MenuDrawer: View {
                     .padding(18)
                     .softCard()
 
+                    // Look — promoted to the top level for quick access.
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("LOOK")
+                            .font(.rounded(12, weight: .bold))
+                            .foregroundStyle(Palette.textSoft)
+                        TactileSegmented(
+                            options: AppTheme.allCases,
+                            selection: $themeManager.theme,
+                            animateSelection: false
+                        ) { $0.label }
+                        Text("Classic is calm flour & terracotta; Vibrant is a bold tomato-and-basil pizzeria look.")
+                            .font(.rounded(11)).foregroundStyle(Palette.textSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(18)
+                    .softCard()
+
+                    // Room temperature — promoted to the top level for quick access.
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 12) {
+                            Text("ROOM TEMPERATURE")
+                                .font(.rounded(12, weight: .bold))
+                                .foregroundStyle(Palette.textSoft)
+                            Spacer()
+                            Text(String(format: "%.1f °C", vm.input.temperatureC))
+                                .font(.rounded(17, weight: .semibold))
+                                .foregroundStyle(Palette.accent)
+                                .contentTransition(.numericText())
+                            Button {
+                                Task { await vm.fetchLocalTemperature() }
+                            } label: {
+                                Group {
+                                    if case .loading = vm.weatherState {
+                                        if Palette.isVibrant { PizzaSpinner(size: 16) }
+                                        else { ProgressView().tint(.white) }
+                                    } else {
+                                        Image(systemName: "location.fill").font(.rounded(14, weight: .semibold))
+                                    }
+                                }
+                                .frame(width: 36, height: 36)
+                            }
+                            .buttonStyle(TactileButtonStyle(isProminent: true, cornerRadius: 18))
+                        }
+                        Slider(value: $vm.input.temperatureC, in: 4...35, step: 0.5) { editing in
+                            if editing { Haptics.tap() }
+                        }
+                        .tint(Palette.accent)
+                        if case .failed(let msg) = vm.weatherState {
+                            Text(msg).font(.rounded(11)).foregroundStyle(Palette.accent)
+                        } else {
+                            Text("Warmer rooms ferment faster — this sets the timings and yeast.")
+                                .font(.rounded(11)).foregroundStyle(Palette.textSoft)
+                        }
+                    }
+                    .padding(18)
+                    .softCard()
+
                     menuLink(icon: "slider.horizontal.3",
                              title: "Settings",
-                             subtitle: "Look, units, oven, reminders & first-time setup") {
+                             subtitle: "Units, oven, reminders, pop-ups & first-time setup") {
                         SettingsView(vm: vm, onReintro: onReintro)
                     }
 
@@ -37,31 +94,10 @@ struct MenuDrawer: View {
                         FavouriteView(vm: vm)
                     }
 
-                    Text("GUIDE & INFO")
-                        .font(.rounded(12, weight: .bold))
-                        .foregroundStyle(Palette.textSoft)
-                        .padding(.top, 8)
-                        .padding(.leading, 4)
-
                     menuLink(icon: "book.closed.fill",
-                             title: "How it works & the maths",
-                             subtitle: "The thinking behind every number, plus more about ingredients.") {
-                        HowItWorksView()
-                    }
-                    menuLink(icon: "wrench.and.screwdriver.fill",
-                             title: "Tools & equipment",
-                             subtitle: "The kit that makes pizza easier — from a scale to a steel.") {
-                        ToolsView()
-                    }
-                    menuLink(icon: "exclamationmark.triangle.fill",
-                             title: "Things that may get-ya",
-                             subtitle: "The usual pizza disasters — and how to dodge them.") {
-                        GotchasView()
-                    }
-                    menuLink(icon: "character.book.closed.fill",
-                             title: "Definitions",
-                             subtitle: "Plain-English meanings for every baking term.") {
-                        DefinitionsView()
+                             title: "Guides & Info",
+                             subtitle: "How it works, tools, things that get-ya & definitions.") {
+                        GuidesView()
                     }
                 }
                 .padding(20)
@@ -106,9 +142,52 @@ struct MenuDrawer: View {
     }
 }
 
+// MARK: - Guides & Info
+
+/// A submenu grouping the reference material (how it works, tools, gotchas, terms).
+struct GuidesView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                link(icon: "book.closed.fill", title: "How it works & the maths",
+                     subtitle: "The thinking behind every number, plus more about ingredients.") { HowItWorksView() }
+                link(icon: "wrench.and.screwdriver.fill", title: "Tools & equipment",
+                     subtitle: "The kit that makes pizza easier — from a scale to a steel.") { ToolsView() }
+                link(icon: "exclamationmark.triangle.fill", title: "Things that may get-ya",
+                     subtitle: "The usual pizza disasters — and how to dodge them.") { GotchasView() }
+                link(icon: "character.book.closed.fill", title: "Definitions",
+                     subtitle: "Plain-English meanings for every baking term.") { DefinitionsView() }
+            }
+            .padding(20)
+        }
+        .background(Palette.background.ignoresSafeArea())
+        .navigationTitle("Guides & Info")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private func link<Destination: View>(icon: String, title: String, subtitle: String,
+                                         @ViewBuilder destination: @escaping () -> Destination) -> some View {
+        NavigationLink { destination() } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon).foregroundStyle(Palette.accent).frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.rounded(16, weight: .semibold)).foregroundStyle(Palette.text)
+                    Text(subtitle).font(.rounded(12)).foregroundStyle(Palette.textSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.rounded(13, weight: .semibold)).foregroundStyle(Palette.textSoft)
+            }
+            .padding(18).frame(maxWidth: .infinity, alignment: .leading).softCard()
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - Settings
 
-/// Units, oven, room temperature and notification reminders.
+/// Units, oven, reminders, pop-ups and first-time setup.
 struct SettingsView: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -117,22 +196,27 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Look / theme
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("LOOK")
-                        .font(.rounded(12, weight: .bold))
-                        .foregroundStyle(Palette.textSoft)
-                    TactileSegmented(
-                        options: AppTheme.allCases,
-                        selection: $themeManager.theme,
-                        animateSelection: false
-                    ) { $0.label }
-                    Text("Classic is calm flour & terracotta; Vibrant is a bold tomato-and-basil pizzeria look.")
-                        .font(.rounded(11)).foregroundStyle(Palette.textSoft)
-                        .fixedSize(horizontal: false, vertical: true)
+                // Re-run the first-time setup — kept at the top of Settings.
+                Button {
+                    onReintro()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles").foregroundStyle(Palette.accent)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Set me up again").font(.rounded(16, weight: .semibold)).foregroundStyle(Palette.text)
+                            Text("Re-run the welcome setup to change your skill level, look and starting picks.")
+                                .font(.rounded(12)).foregroundStyle(Palette.textSoft)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.rounded(13, weight: .semibold)).foregroundStyle(Palette.textSoft)
+                    }
+                    .padding(18)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .softCard()
                 }
-                .padding(18)
-                .softCard()
+                .buttonStyle(.plain)
 
                 // Units
                 VStack(alignment: .leading, spacing: 10) {
@@ -163,49 +247,6 @@ struct SettingsView: View {
                         .font(.rounded(11))
                         .foregroundStyle(Palette.textSoft)
                         .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(18)
-                .softCard()
-
-                // Room temperature
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 12) {
-                        Text("ROOM TEMPERATURE")
-                            .font(.rounded(12, weight: .bold))
-                            .foregroundStyle(Palette.textSoft)
-                        Spacer()
-                        Text(String(format: "%.1f °C", vm.input.temperatureC))
-                            .font(.rounded(17, weight: .semibold))
-                            .foregroundStyle(Palette.accent)
-                            .contentTransition(.numericText())
-                        Button {
-                            Task { await vm.fetchLocalTemperature() }
-                        } label: {
-                            Group {
-                                if case .loading = vm.weatherState {
-                                    if Palette.isVibrant {
-                                        PizzaSpinner(size: 16)
-                                    } else {
-                                        ProgressView().tint(.white)
-                                    }
-                                } else {
-                                    Image(systemName: "location.fill").font(.rounded(14, weight: .semibold))
-                                }
-                            }
-                            .frame(width: 36, height: 36)
-                        }
-                        .buttonStyle(TactileButtonStyle(isProminent: true, cornerRadius: 18))
-                    }
-                    Slider(value: $vm.input.temperatureC, in: 4...35, step: 0.5) { editing in
-                        if editing { Haptics.tap() }
-                    }
-                    .tint(Palette.accent)
-                    if case .failed(let msg) = vm.weatherState {
-                        Text(msg).font(.rounded(11)).foregroundStyle(Palette.accent)
-                    } else {
-                        Text("Warmer rooms ferment faster — this sets the timings and yeast.")
-                            .font(.rounded(11)).foregroundStyle(Palette.textSoft)
-                    }
                 }
                 .padding(18)
                 .softCard()
@@ -257,28 +298,6 @@ struct SettingsView: View {
                 }
                 .padding(18)
                 .softCard()
-
-                // Re-run the first-time setup.
-                Button {
-                    onReintro()
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "sparkles").foregroundStyle(Palette.accent)
-                            .frame(width: 24)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Set me up again").font(.rounded(16, weight: .semibold)).foregroundStyle(Palette.text)
-                            Text("Re-run the welcome setup to change your skill level, look and starting picks.")
-                                .font(.rounded(12)).foregroundStyle(Palette.textSoft)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right").font(.rounded(13, weight: .semibold)).foregroundStyle(Palette.textSoft)
-                    }
-                    .padding(18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .softCard()
-                }
-                .buttonStyle(.plain)
             }
             .padding(20)
             .id(themeManager.theme)   // rebuild so a theme switch re-skins fully

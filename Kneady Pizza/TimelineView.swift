@@ -9,23 +9,27 @@ struct TimelineView: View {
     var toppingPlan: [PizzaToppingPlan] = []
     var toppingAdvice: String = ""
     var metric: Bool = true
+    /// Step indices marked done (faded + struck through).
+    var completed: Set<Int> = []
+    var onToggleDone: (Int) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(schedule.steps.enumerated()), id: \.element.id) { idx, step in
                 let isLast = idx == schedule.steps.count - 1
+                let done = completed.contains(idx)
                 HStack(alignment: .top, spacing: 14) {
                     // Node + connecting line
                     VStack(spacing: 0) {
                         ZStack {
                             Circle()
-                                .fill(isLast ? Palette.accent : Palette.surface)
+                                .fill(done ? Palette.sage : (isLast ? Palette.accent : Palette.surface))
                                 .frame(width: 38, height: 38)
                                 .shadow(color: Palette.shadowDark, radius: 4, x: 3, y: 3)
                                 .shadow(color: Palette.shadowLight, radius: 4, x: -3, y: -3)
-                            Image(systemName: step.icon)
+                            Image(systemName: done ? "checkmark" : step.icon)
                                 .font(.rounded(15, weight: .semibold))
-                                .foregroundStyle(isLast ? Color.white : Palette.accent)
+                                .foregroundStyle(done || isLast ? Color.white : Palette.accent)
                         }
                         if !isLast {
                             Rectangle()
@@ -41,6 +45,7 @@ struct TimelineView: View {
                             Text(step.title)
                                 .font(.rounded(16, weight: .semibold))
                                 .foregroundStyle(Palette.text)
+                                .strikethrough(done)
                             Button { onInfo(step); Haptics.tap() } label: {
                                 Image(systemName: "info.circle")
                                     .font(.rounded(13, weight: .medium))
@@ -57,6 +62,7 @@ struct TimelineView: View {
                         Text(step.detail)
                             .font(.rounded(12))
                             .foregroundStyle(Palette.textSoft)
+                            .strikethrough(done)
                             .fixedSize(horizontal: false, vertical: true)
                         let items = itemsFor(step)
                         if !items.isEmpty {
@@ -145,6 +151,9 @@ struct TimelineView: View {
                             .padding(.top, 4)
                         }
                     }
+                    .opacity(done ? 0.5 : 1)
+                    .contentShape(Rectangle())
+                    .onTapGesture { onToggleDone(idx) }
                     .padding(.bottom, isLast ? 0 : 14)
                 }
             }

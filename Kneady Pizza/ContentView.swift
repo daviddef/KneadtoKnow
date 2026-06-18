@@ -31,6 +31,8 @@ struct ContentView: View {
     @State private var popupIsTip = false
     @State private var popupEmoji = "💡"
     @State private var jokeTicks = 0
+    /// Indices of cooking-direction steps marked done (faded + struck through).
+    @State private var completedSteps: Set<Int> = []
     private let jokeTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     /// Keeps "now" live so Start/Ready times track the real clock.
     @Environment(\.scenePhase) private var scenePhase
@@ -51,8 +53,6 @@ struct ContentView: View {
                             if vm.input.keepItSimple {
                                 simpleSetupCard
                                     .id("sec-setup")
-                                simpleDirectionsCard
-                                    .id("directions")
                                 StyleHeroImage(style: vm.input.style)
                                     .id("heroImage")
                                 ResultView(result: vm.result, metric: vm.metric,
@@ -67,6 +67,8 @@ struct ContentView: View {
                                            currencyCode: Locale.current.currency?.identifier ?? "USD",
                                            onEditPrices: { activeSheet = .prices })
                                     .id("summary")
+                                simpleDirectionsCard
+                                    .id("directions")
                             } else {
                                 styleSection
                                     .id("sec-style")
@@ -78,11 +80,8 @@ struct ContentView: View {
                                     .id("sec-yeast")
                                 recipeDefaultsSection
                                     .id("sec-recipe")
-                                directionsSection
-                                    .id("directions")
                                 StyleHeroImage(style: vm.input.style)
-                                    .id("summary")
-
+                                    .id("heroImage")
                                 ResultView(result: vm.result, metric: vm.metric,
                                            toppingLines: vm.toppingLines(),
                                            showPizzaCounts: vm.selectedPizzaTotal > 1,
@@ -94,6 +93,9 @@ struct ContentView: View {
                                            costPerPizza: costStrings.perPizza,
                                            currencyCode: Locale.current.currency?.identifier ?? "USD",
                                            onEditPrices: { activeSheet = .prices })
+                                    .id("summary")
+                                directionsSection
+                                    .id("directions")
                             }
 
                             footnote
@@ -169,6 +171,7 @@ struct ContentView: View {
         }
         .onChange(of: vm.schedule.start) { _, _ in
             vm.rescheduleNotifications()
+            completedSteps.removeAll()   // a new plan resets the done-ticks
         }
         .onChange(of: vm.input.keepItSimple) { _, simple in
             if simple {
@@ -335,8 +338,8 @@ struct ContentView: View {
             Button {
                 Haptics.tap()
                 withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                    // Jump to the pizza image (simple) or the summary (advanced).
-                    proxy.scrollTo(vm.input.keepItSimple ? "heroImage" : "summary", anchor: .top)
+                    // Jump straight to the Cooking Directions.
+                    proxy.scrollTo("directions", anchor: .top)
                 }
             } label: {
                 HStack(spacing: 8) {
@@ -364,9 +367,6 @@ struct ContentView: View {
                         .font(.rounded(12))
                         .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.rounded(16, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
                 }
                 .contentShape(Rectangle())
             }
@@ -697,7 +697,7 @@ struct ContentView: View {
                     selection: $vm.input.yeast
                 ) { $0.rawValue }
 
-                Text("\(vm.input.yeast.fullName) · suited to \(vm.input.style.name)")
+                Text("\(vm.input.yeast.fullName) · \(Units.weight(yeastGrams, metric: vm.metric)) · suited to \(vm.input.style.name)")
                     .font(.rounded(13))
                     .foregroundStyle(Palette.textSoft)
 
@@ -1078,7 +1078,22 @@ struct ContentView: View {
                      itemsFor: { vm.stepItems(for: $0) },
                      toppingPlan: vm.toppingPlan(),
                      toppingAdvice: vm.toppingAdvice,
-                     metric: vm.metric)
+                     metric: vm.metric,
+                     completed: completedSteps,
+                     onToggleDone: { toggleStepDone($0) })
+    }
+
+    /// Tap a step to mark it (and the steps before it) done; tap again to undo
+    /// it and the steps before it.
+    private func toggleStepDone(_ i: Int) {
+        Haptics.tap()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if completedSteps.contains(i) {
+                for j in 0...i { completedSteps.remove(j) }
+            } else {
+                for j in 0...i { completedSteps.insert(j) }
+            }
+        }
     }
 
     /// A step's info sheet — leads with *what the thing is* (poolish, autolyse,
@@ -1276,8 +1291,16 @@ struct ContentView: View {
         }
         return "\(vm.input.ballCount) \(noun), \(size)"
     }
+    /// Total yeast/starter weight pulled from the computed recipe.
+    private var yeastGrams: Double {
+        vm.result.stages.flatMap { $0.ingredients }
+            .filter { $0.name == vm.input.yeast.fullName }
+            .reduce(0) { $0 + $1.grams }
+    }
+
     private var yeastSummary: String {
-        vm.input.yeast.fullName + (vm.input.prefermentActive ? ", \(vm.input.preferment.name.lowercased())" : "")
+        vm.input.yeast.fullName + " · " + Units.weight(yeastGrams, metric: vm.metric)
+            + (vm.input.prefermentActive ? ", \(vm.input.preferment.name.lowercased())" : "")
     }
     private var scheduleSummary: String {
         if vm.input.ferment == .quick {

@@ -193,10 +193,9 @@ final class DoughViewModel: ObservableObject {
     func applySimpleProofDefault() {
         now = Date()
         withAnimation(.easeInOut) {
-            input.ferment = .quick                 // makes any pre-ferment inactive
-            if input.honey < 0.01 { input.honey = 0.01 }
-            input.serveDate = now.addingTimeInterval(12 * 3600)
+            input.ferment = .sameDay   // Warm Proof by default
         }
+        resetServeToEarliest()         // soonest sensible serve for a warm proof
     }
 
     /// The soonest (hours from now) a given proof method could be ready, using
