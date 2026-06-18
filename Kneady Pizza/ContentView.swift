@@ -315,16 +315,13 @@ struct ContentView: View {
             Button {
                 Haptics.tap()
                 if vm.input.keepItSimple {
-                    // Reveal/hide the full summary beneath the image.
+                    // Reveal/hide the full summary beneath the image. Scroll to
+                    // the top of the image (a stable anchor that's always present,
+                    // so it lands reliably and never clips the image).
+                    let willShow = !showSimpleSummary
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                        showSimpleSummary.toggle()
-                    }
-                    if showSimpleSummary {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                                proxy.scrollTo("summary", anchor: .top)
-                            }
-                        }
+                        showSimpleSummary = willShow
+                        if willShow { proxy.scrollTo("heroImage", anchor: .top) }
                     }
                 } else {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
