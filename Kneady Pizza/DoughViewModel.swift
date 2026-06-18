@@ -560,6 +560,32 @@ final class DoughViewModel: ObservableObject {
         RecipeCatalog.selectedRecipes(styleID: input.style.id, selection: pizzaSelection).map { $0.name }
     }
 
+    /// A rough offline cost estimate for the whole bake — the dough (flour,
+    /// salt, oil, honey, binder; water is free, yeast negligible) plus the
+    /// selected toppings. Prices are the user-editable per-kg figures.
+    func estimatedCost() -> (total: Double, perPizza: Double) {
+        let p = PriceStore.shared
+        let i = input
+        func kg(_ g: Double) -> Double { max(0, g) / 1000 }
+
+        let binderPct = (i.glutenFree && !i.binderInBlend) ? i.binder.pct : 0
+        let divisor = 1 + i.hydration + i.salt + i.oil + i.honey + binderPct
+        let flour = divisor > 0 ? result.totalWeight / divisor : 0
+
+        var total = kg(flour) * p.pricePerKg(.flour)
+        total += kg(flour * i.salt) * p.pricePerKg(.salt)
+        if i.oil > 0 { total += kg(flour * i.oil) * p.pricePerKg(.oil) }
+        if i.honey > 0 { total += kg(flour * i.honey) * p.pricePerKg(.sweetener) }
+        if binderPct > 0 { total += kg(flour * binderPct) * p.pricePerKg(.binder) }
+
+        for line in toppingLines() {
+            total += kg(line.grams) * p.pricePerKg(PriceCategory.classify(line.name))
+        }
+
+        let count = max(input.ballCount, 1)
+        return (total, total / Double(count))
+    }
+
     /// Each selected pizza with its toppings in application order (per pizza),
     /// for the "Top It" step of the directions.
     func toppingPlan() -> [PizzaToppingPlan] {

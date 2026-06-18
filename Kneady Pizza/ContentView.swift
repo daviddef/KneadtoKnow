@@ -2,13 +2,14 @@ import SwiftUI
 import Combine
 
 enum ActiveSheet: Identifiable {
-    case planner, stylePicker, info(InfoTopic), selectionTips
+    case planner, stylePicker, info(InfoTopic), selectionTips, prices
     var id: String {
         switch self {
         case .planner: return "planner"
         case .stylePicker: return "stylePicker"
         case .info(let t): return "info-\(t.id)"
         case .selectionTips: return "selectionTips"
+        case .prices: return "prices"
         }
     }
 }
@@ -16,6 +17,7 @@ enum ActiveSheet: Identifiable {
 struct ContentView: View {
     @StateObject private var vm = DoughViewModel()
     @ObservedObject private var themeManager = ThemeManager.shared
+    @ObservedObject private var prices = PriceStore.shared
     @State private var activeSheet: ActiveSheet?
     /// Whether the slide-in menu drawer is showing.
     @State private var menuOpen = false
@@ -29,9 +31,6 @@ struct ContentView: View {
     @State private var popupIsTip = false
     @State private var popupEmoji = "💡"
     @State private var jokeTicks = 0
-    /// In keep-it-simple mode, whether the full summary below the image is shown
-    /// (toggled by tapping the banner).
-    @State private var showSimpleSummary = false
     private let jokeTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     /// Keeps "now" live so Start/Ready times track the real clock.
     @Environment(\.scenePhase) private var scenePhase
@@ -56,17 +55,17 @@ struct ContentView: View {
                                     .id("directions")
                                 StyleHeroImage(style: vm.input.style)
                                     .id("heroImage")
-                                if showSimpleSummary {
-                                    ResultView(result: vm.result, metric: vm.metric,
-                                               toppingLines: vm.toppingLines(),
-                                               showPizzaCounts: vm.selectedPizzaTotal > 1,
-                                               extras: vm.selectedExtras,
-                                               hasSelection: vm.selectedPizzaTotal > 0,
-                                               shareText: vm.shareText(),
-                                               onPlan: { activeSheet = .planner })
-                                        .id("summary")
-                                        .transition(.opacity.combined(with: .move(edge: .top)))
-                                }
+                                ResultView(result: vm.result, metric: vm.metric,
+                                           toppingLines: vm.toppingLines(),
+                                           showPizzaCounts: vm.selectedPizzaTotal > 1,
+                                           extras: vm.selectedExtras,
+                                           hasSelection: vm.selectedPizzaTotal > 0,
+                                           shareText: vm.shareText(),
+                                           onPlan: { activeSheet = .planner },
+                                           costTotal: costStrings.total,
+                                           costPerPizza: costStrings.perPizza,
+                                           onEditPrices: { activeSheet = .prices })
+                                    .id("summary")
                             } else {
                                 styleSection
                                     .id("sec-style")
@@ -89,7 +88,10 @@ struct ContentView: View {
                                            extras: vm.selectedExtras,
                                            hasSelection: vm.selectedPizzaTotal > 0,
                                            shareText: vm.shareText(),
-                                           onPlan: { activeSheet = .planner })
+                                           onPlan: { activeSheet = .planner },
+                                           costTotal: costStrings.total,
+                                           costPerPizza: costStrings.perPizza,
+                                           onEditPrices: { activeSheet = .prices })
                             }
 
                             footnote
@@ -188,6 +190,8 @@ struct ContentView: View {
                 InfoSheet(topic: topic, humourEnabled: vm.input.humourEnabled)
             case .selectionTips:
                 SelectionTipsSheet(input: vm.input)
+            case .prices:
+                PriceListView()
             }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
@@ -196,6 +200,12 @@ struct ContentView: View {
     }
 
     private func showInfo(_ topic: InfoTopic) { activeSheet = .info(topic) }
+
+    /// Pre-formatted estimated-cost strings for the summary (local currency).
+    private var costStrings: (total: String, perPizza: String) {
+        let c = vm.estimatedCost()
+        return (moneyString(c.total), moneyString(c.perPizza))
+    }
 
     private func openMenu() {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { menuOpen = true }
@@ -314,19 +324,9 @@ struct ContentView: View {
         HStack(spacing: 10) {
             Button {
                 Haptics.tap()
-                if vm.input.keepItSimple {
-                    // Reveal/hide the full summary beneath the image. Scroll to
-                    // the top of the image (a stable anchor that's always present,
-                    // so it lands reliably and never clips the image).
-                    let willShow = !showSimpleSummary
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                        showSimpleSummary = willShow
-                        if willShow { proxy.scrollTo("heroImage", anchor: .top) }
-                    }
-                } else {
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                        proxy.scrollTo("summary", anchor: .top)
-                    }
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                    // Jump to the pizza image (simple) or the summary (advanced).
+                    proxy.scrollTo(vm.input.keepItSimple ? "heroImage" : "summary", anchor: .top)
                 }
             } label: {
                 HStack(spacing: 8) {
@@ -354,7 +354,7 @@ struct ContentView: View {
                         .font(.rounded(12))
                         .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
-                    Image(systemName: (vm.input.keepItSimple && showSimpleSummary) ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                    Image(systemName: "arrow.down.circle.fill")
                         .font(.rounded(16, weight: .medium))
                         .foregroundStyle(.white.opacity(0.7))
                 }

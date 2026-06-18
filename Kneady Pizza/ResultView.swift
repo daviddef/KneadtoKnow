@@ -13,6 +13,10 @@ struct ResultView: View {
     var hasSelection: Bool = false
     var shareText: String = ""
     var onPlan: () -> Void = {}
+    /// Estimated cost: total and per-pizza, pre-formatted in the local currency.
+    var costTotal: String? = nil
+    var costPerPizza: String? = nil
+    var onEditPrices: () -> Void = {}
 
     private func grams(_ g: Double) -> String { Units.weight(g, metric: metric) }
     private var guidance: WeightGuidance {
@@ -51,6 +55,23 @@ struct ResultView: View {
                 .font(.rounded(11))
                 .foregroundStyle(Palette.textSoft)
                 .multilineTextAlignment(.center)
+
+            if let costTotal {
+                Button { onEditPrices() } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "tag.fill").font(.rounded(11))
+                        Text("≈ \(costTotal)" + (costPerPizza.map { " · \($0)/pizza" } ?? ""))
+                            .font(.rounded(12, weight: .semibold))
+                        Image(systemName: "pencil").font(.rounded(10))
+                    }
+                    .foregroundStyle(Palette.sage)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill(Palette.sage.opacity(0.14)))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
         }
         .frame(maxWidth: .infinity)
     }
