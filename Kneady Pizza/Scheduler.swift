@@ -55,7 +55,7 @@ enum Scheduler {
     static func idealTotalHours(input: DoughInput) -> Double {
         let tf = tempFactor(input.temperatureC)
         let pref = prefermentRest(input)
-        let auto = input.useAutolyse ? autolyseHours : 0
+        let auto = input.autolyseActive ? autolyseHours : 0
         switch input.ferment {
         case .sameDay: return pref + auto + clamp(14 * tf, 3, 60) + clamp(4 * tf, 1, 12)
         case .cold:    return pref + auto + coldRoomBulk + 24 + coldWarmUp
@@ -88,7 +88,7 @@ enum Scheduler {
         let mixDetail: String
         if isFocaccia {
             mixDetail = "Mix the flour, water, salt, yeast and oil into a wet, sticky dough — no real kneading needed. You'll build the strength with a few stretch-and-folds instead, so just bring it together, cover and rest."
-        } else if input.useAutolyse {
+        } else if input.autolyseActive {
             if pref {
                 mixDetail = "Bring the two big pieces together: add the whole \(input.preferment.name.lowercased()) and the salt (plus any oil or honey) to the autolyse — your rested bowl of flour and water. Knead it all until smooth and elastic, then lightly oil the bowl, cover and leave to rise."
             } else {
@@ -109,7 +109,7 @@ enum Scheduler {
                             detail: input.preferment.mixDetail,
                             rest: prefRest, loc: .room, active: true))
         }
-        if input.useAutolyse {
+        if input.autolyseActive {
             segs.append(Seg(icon: "timer", title: "Autolyse",
                             detail: "Mix just the flour and water (no salt or yeast) into a shaggy mass. Cover and rest — the flour hydrates fully and the dough becomes far easier to stretch.",
                             rest: autolyseHours, loc: .room, active: true))
@@ -128,7 +128,7 @@ enum Scheduler {
             func sameDayIdeal(at t: Double) -> Double {
                 let f = tempFactor(t)
                 let pf = input.prefermentActive ? clamp(input.preferment.restBaseHours * f, 6, 24) : 0
-                let a = input.useAutolyse ? autolyseHours : 0
+                let a = input.autolyseActive ? autolyseHours : 0
                 return pf + a + clamp(14 * f, 3, 60) + clamp(4 * f, 1, 12)
             }
             var proofTemp = userTemp
@@ -142,7 +142,7 @@ enum Scheduler {
             var bulk = clamp(14 * f, 3, 60)
             var proof = clamp(4 * f, 1, 12)
             prefRest = input.prefermentActive ? clamp(input.preferment.restBaseHours * f, 6, 24) : 0
-            let idealWarm = prefRest + (input.useAutolyse ? autolyseHours : 0) + bulk + proof
+            let idealWarm = prefRest + (input.autolyseActive ? autolyseHours : 0) + bulk + proof
             if available + 0.5 < idealWarm && idealWarm > 0 {
                 isTight = true
                 let s = max(available, 0.5) / idealWarm
@@ -174,7 +174,7 @@ enum Scheduler {
         case .quick:
             // Fit autolyse + rise + proof inside the available window so the
             // start never lands in the past.
-            let auto = input.useAutolyse ? autolyseHours : 0
+            let auto = input.autolyseActive ? autolyseHours : 0
             let pool = max(available - auto, 0.75)
             let rise = clamp(pool * 0.6, 0.5, 3)
             let proof = clamp(pool * 0.4, 0.25, 1)

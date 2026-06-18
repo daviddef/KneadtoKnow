@@ -29,6 +29,9 @@ struct ContentView: View {
     @State private var popupIsTip = false
     @State private var popupEmoji = "💡"
     @State private var jokeTicks = 0
+    /// In keep-it-simple mode, whether the full summary below the image is shown
+    /// (toggled by tapping the banner).
+    @State private var showSimpleSummary = false
     private let jokeTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     /// Keeps "now" live so Start/Ready times track the real clock.
     @Environment(\.scenePhase) private var scenePhase
@@ -43,20 +46,38 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     header
                     totalBanner(proxy)
+                    recapChips(proxy)
                     ScrollView {
                         VStack(spacing: 18) {
                             if vm.input.keepItSimple {
                                 simpleSetupCard
+                                    .id("sec-setup")
                                 simpleDirectionsCard
                                     .id("directions")
                                 StyleHeroImage(style: vm.input.style)
-                                    .id("summary")
+                                    .id("heroImage")
+                                if showSimpleSummary {
+                                    ResultView(result: vm.result, metric: vm.metric,
+                                               toppingLines: vm.toppingLines(),
+                                               showPizzaCounts: vm.selectedPizzaTotal > 1,
+                                               extras: vm.selectedExtras,
+                                               hasSelection: vm.selectedPizzaTotal > 0,
+                                               shareText: vm.shareText(),
+                                               onPlan: { activeSheet = .planner })
+                                        .id("summary")
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                }
                             } else {
                                 styleSection
+                                    .id("sec-style")
                                 sizeSection
-                                yeastSection
-                                recipeDefaultsSection
+                                    .id("sec-size")
                                 scheduleSection
+                                    .id("sec-schedule")
+                                yeastSection
+                                    .id("sec-yeast")
+                                recipeDefaultsSection
+                                    .id("sec-recipe")
                                 directionsSection
                                     .id("directions")
                                 StyleHeroImage(style: vm.input.style)
@@ -64,7 +85,7 @@ struct ContentView: View {
 
                                 ResultView(result: vm.result, metric: vm.metric,
                                            toppingLines: vm.toppingLines(),
-                                           pizzaLegend: vm.pizzaLegend(),
+                                           showPizzaCounts: vm.selectedPizzaTotal > 1,
                                            extras: vm.selectedExtras,
                                            hasSelection: vm.selectedPizzaTotal > 0,
                                            shareText: vm.shareText(),
@@ -131,6 +152,9 @@ struct ContentView: View {
             UIApplication.shared.isIdleTimerDisabled = true   // no auto-lock
             vm.refreshNow()
             vm.rescheduleNotifications()
+            // Recipe proportions: open by default in advanced, closed in simple.
+            if vm.input.keepItSimple { collapsed.insert("proportions") }
+            else { collapsed.remove("proportions") }
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
@@ -147,6 +171,8 @@ struct ContentView: View {
                 vm.input.ballWeight = vm.input.style.defaultBallWeight
                 vm.applySimpleProofDefault()
                 themeManager.theme = .fun
+                // Simple mode hides the section anyway — keep it closed.
+                collapsed.insert("proportions")
             } else {
                 // Advanced mode reveals the recipe proportions, open by default.
                 collapsed.remove("proportions")
@@ -288,8 +314,22 @@ struct ContentView: View {
         HStack(spacing: 10) {
             Button {
                 Haptics.tap()
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                    proxy.scrollTo("summary", anchor: .top)
+                if vm.input.keepItSimple {
+                    // Reveal/hide the full summary beneath the image.
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                        showSimpleSummary.toggle()
+                    }
+                    if showSimpleSummary {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                                proxy.scrollTo("summary", anchor: .top)
+                            }
+                        }
+                    }
+                } else {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                        proxy.scrollTo("summary", anchor: .top)
+                    }
                 }
             } label: {
                 HStack(spacing: 8) {
@@ -317,7 +357,7 @@ struct ContentView: View {
                         .font(.rounded(12))
                         .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
-                    Image(systemName: "arrow.down.circle.fill")
+                    Image(systemName: (vm.input.keepItSimple && showSimpleSummary) ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
                         .font(.rounded(16, weight: .medium))
                         .foregroundStyle(.white.opacity(0.7))
                 }
@@ -346,8 +386,78 @@ struct ContentView: View {
         .padding(.bottom, 8)
     }
 
+    // MARK: Recap chip-strip
+
+    private struct RecapItem: Identifiable { let id: String; let label: String; let anchor: String }
+
+    /// Live recap of the current choices — tap a chip to jump to its section.
+    private var recapItems: [RecapItem] {
+        let i = vm.input
+        let simple = i.keepItSimple
+        let styleAnchor = simple ? "sec-setup" : "sec-style"
+        let noun = i.ballCount == 1 ? i.style.shape.noun : i.style.shape.nounPlural
+        var items: [RecapItem] = [
+            .init(id: "style", label: "\(i.style.originFlag) \(i.style.name)", anchor: styleAnchor),
+            .init(id: "size", label: "\(i.ballCount) \(noun)", anchor: simple ? "sec-setup" : "sec-size"),
+        ]
+        if i.glutenFree { items.append(.init(id: "gf", label: "Gluten free", anchor: styleAnchor)) }
+        items.append(.init(id: "proof", label: i.ferment.label, anchor: simple ? "sec-setup" : "sec-schedule"))
+        if !simple {
+            items.append(.init(id: "yeast", label: i.yeast.fullName, anchor: "sec-yeast"))
+            if i.prefermentAvailable {
+                items.append(.init(id: "pref", label: i.usePreferment ? i.preferment.name : "Direct", anchor: "sec-yeast"))
+            }
+            if i.autolyseActive {
+                items.append(.init(id: "auto", label: "Autolyse", anchor: "sec-yeast"))
+            }
+            items.append(.init(id: "hyd", label: "\(Int((i.hydration * 100).rounded()))% hyd", anchor: "sec-recipe"))
+        }
+        return items
+    }
+
+    @ViewBuilder private func recapChips(_ proxy: ScrollViewProxy) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                ForEach(recapItems) { item in
+                    Button {
+                        Haptics.tap()
+                        // Expand the target so it isn't collapsed when you land.
+                        if let key = collapseKey(forAnchor: item.anchor) { collapsed.remove(key) }
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                            proxy.scrollTo(item.anchor, anchor: .top)
+                        }
+                    } label: {
+                        Text(item.label)
+                            .font(.rounded(11, weight: .semibold))
+                            .foregroundStyle(Palette.accent)
+                            .lineLimit(1)
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(Palette.accent.opacity(0.12)))
+                            .overlay(Capsule().stroke(Palette.accent.opacity(0.18), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 8)
+        }
+    }
+
     private func toggle(_ key: String) {
         if collapsed.contains(key) { collapsed.remove(key) } else { collapsed.insert(key) }
+    }
+
+    /// The collapse key behind a chip's anchor (so tapping a chip expands it).
+    private func collapseKey(forAnchor anchor: String) -> String? {
+        switch anchor {
+        case "sec-style": return "style"
+        case "sec-size": return "size"
+        case "sec-schedule": return "schedule"
+        case "sec-yeast": return "yeast"
+        case "sec-recipe": return "proportions"
+        default: return nil
+        }
     }
 
     // MARK: 1 — Style
@@ -570,7 +680,7 @@ struct ContentView: View {
     // MARK: 3 — Yeast
 
     private var yeastSection: some View {
-        InputCard(index: 3, title: SectionCopy.title("Yeast or starter"), info: .yeast, onInfo: showInfo,
+        InputCard(index: 4, title: SectionCopy.title("Yeast or starter"), info: .yeast, onInfo: showInfo,
                   summary: yeastSummary,
                   collapsed: collapsed.contains("yeast"),
                   onToggleCollapse: { toggle("yeast") }) {
@@ -646,20 +756,27 @@ struct ContentView: View {
 
                 Divider().overlay(Palette.textSoft.opacity(0.15))
 
-                HStack(spacing: 6) {
-                    TactileToggle(
-                        title: "Autolyse first",
-                        subtitle: "Rest flour & water alone for ~30 min before adding salt & yeast — easier to stretch.",
-                        isOn: $vm.input.useAutolyse
-                    )
-                    Button { showInfo(.autolyse) } label: {
-                        Image(systemName: "info.circle")
-                            .font(.rounded(14, weight: .medium))
-                            .foregroundStyle(Palette.accent)
-                            .frame(width: 28, height: 28)
-                            .contentShape(Rectangle())
+                if vm.input.autolyseAvailable {
+                    HStack(spacing: 6) {
+                        TactileToggle(
+                            title: "Autolyse first",
+                            subtitle: "Rest flour & water alone for ~30 min before adding salt & yeast — easier to stretch.",
+                            isOn: $vm.input.useAutolyse
+                        )
+                        Button { showInfo(.autolyse) } label: {
+                            Image(systemName: "info.circle")
+                                .font(.rounded(14, weight: .medium))
+                                .foregroundStyle(Palette.accent)
+                                .frame(width: 28, height: 28)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                } else {
+                    Text("A Quick dough skips the autolyse — the warm-water mix gets things going fast instead. Switch to Warm or Cold to use one.")
+                        .font(.rounded(12))
+                        .foregroundStyle(Palette.textSoft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
@@ -682,7 +799,7 @@ struct ContentView: View {
         if vm.input.oil   > 0 { proportionsSummary += " · \(pc(vm.input.oil)) oil" }
         if vm.input.honey > 0 { proportionsSummary += " · \(pc(vm.input.honey)) honey" }
 
-        return InputCard(index: 4, title: SectionCopy.title("Recipe proportions"), info: .recipe, onInfo: showInfo,
+        return InputCard(index: 5, title: SectionCopy.title("Recipe proportions"), info: .recipe, onInfo: showInfo,
                   summary: proportionsSummary,
                   collapsed: collapsed.contains("proportions"),
                   onToggleCollapse: { toggle("proportions") }) {
@@ -796,7 +913,7 @@ struct ContentView: View {
     // MARK: 5 — Schedule
 
     /// Schedule/Directions renumber when the simple-mode cards are hidden.
-    private var idxSchedule: Int { vm.input.keepItSimple ? 3 : 5 }
+    private var idxSchedule: Int { 3 }
     private var idxDirections: Int { vm.input.keepItSimple ? 4 : 6 }
 
     private var scheduleSection: some View {

@@ -7,15 +7,12 @@ struct ResultView: View {
     let result: DoughResult
     var metric: Bool = true
     var toppingLines: [ShoppingLine] = []
-    var pizzaLegend: [String] = []
+    /// Show a "N pizzas" badge per topping (only useful with >1 pizza selected).
+    var showPizzaCounts: Bool = false
     var extras: [String] = []
     var hasSelection: Bool = false
     var shareText: String = ""
     var onPlan: () -> Void = {}
-
-    private var legendText: String {
-        pizzaLegend.enumerated().map { "\($0.offset + 1) \($0.element)" }.joined(separator: " · ")
-    }
 
     private func grams(_ g: Double) -> String { Units.weight(g, metric: metric) }
     private var guidance: WeightGuidance {
@@ -76,19 +73,12 @@ struct ResultView: View {
             }
 
             if hasSelection {
-                if pizzaLegend.count > 1 {
-                    Text(legendText)
-                        .font(.rounded(10, weight: .semibold))
-                        .foregroundStyle(Palette.textSoft)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    HStack(spacing: 5) {
-                        Image(systemName: "square.3.layers.3d.top.filled")
-                        Text("In the order they go on.")
-                    }
-                    .font(.rounded(10))
-                    .foregroundStyle(Palette.textSoft)
+                HStack(spacing: 5) {
+                    Image(systemName: "square.3.layers.3d.top.filled")
+                    Text("In the order they go on.")
                 }
+                .font(.rounded(10))
+                .foregroundStyle(Palette.textSoft)
 
                 ForEach(Array(toppingLines.enumerated()), id: \.element.id) { idx, line in
                     if idx > 0 { Divider().overlay(Palette.textSoft.opacity(0.08)) }
@@ -96,11 +86,11 @@ struct ResultView: View {
                         Text(line.name)
                             .font(.rounded(13, weight: .medium))
                             .foregroundStyle(Palette.text)
-                        if pizzaLegend.count > 1 && !line.pizzas.isEmpty {
-                            Text(line.pizzas.map(String.init).joined(separator: ","))
+                        if showPizzaCounts && line.pizzaCount > 0 {
+                            Text("\(line.pizzaCount) pizza\(line.pizzaCount == 1 ? "" : "s")")
                                 .font(.rounded(10, weight: .bold))
                                 .foregroundStyle(Palette.accent)
-                                .padding(.horizontal, 5)
+                                .padding(.horizontal, 6)
                                 .padding(.vertical, 1)
                                 .background(Capsule().fill(Palette.accent.opacity(0.14)))
                         }

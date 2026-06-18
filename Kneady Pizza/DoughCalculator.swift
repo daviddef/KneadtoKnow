@@ -156,6 +156,12 @@ struct DoughInput {
     /// dough has no gluten for a biga/poolish to strengthen.
     var prefermentAvailable: Bool { !glutenFree && !yeast.isSourdough && ferment != .quick }
     var prefermentActive: Bool { usePreferment && prefermentAvailable }
+
+    /// Autolyse is skipped for a Quick dough (it's too fast, and the warm-water
+    /// quick mix takes over). The toggle value is kept so switching back to a
+    /// Warm/Cold proof restores the previous choice.
+    var autolyseAvailable: Bool { ferment != .quick }
+    var autolyseActive: Bool { useAutolyse && autolyseAvailable }
 }
 
 // MARK: - Weight guidance
