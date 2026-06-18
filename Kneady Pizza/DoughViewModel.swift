@@ -426,6 +426,7 @@ final class DoughViewModel: ObservableObject {
     func select(style: PizzaStyle) {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             input.applyDefaults(of: style)
+            input.ballCount = style.defaultCount   // e.g. focaccia → one pan
             pizzaSelection = [:]   // recipes differ per style
         }
         Haptics.select()

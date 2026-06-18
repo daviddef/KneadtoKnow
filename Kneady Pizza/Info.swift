@@ -1,12 +1,51 @@
 import SwiftUI
 
+// MARK: - Definition callout tint
+
+/// A theme-aware tint for a definition callout. Stored as a role (not a Color)
+/// so it follows the active theme.
+enum InfoTint {
+    case accent, sage, amber, cool, warm, danger
+    var color: Color {
+        switch self {
+        case .accent: return Palette.accent
+        case .sage:   return Palette.sage
+        case .amber:  return Palette.amber
+        case .cool:   return Palette.cool
+        case .warm:   return Palette.warm
+        case .danger: return Palette.danger
+        }
+    }
+}
+
+/// One named item in a topic — shown as a neat, colour-coded callout instead of
+/// being buried in a paragraph.
+struct InfoDefinition: Identifiable, Equatable {
+    var id: String { term }
+    let term: String
+    let detail: String
+    let icon: String
+    let tint: InfoTint
+
+    /// The three fermentation methods — reused by the Fermentation and Serve sheets.
+    static let fermentMethods: [InfoDefinition] = [
+        .init(term: "Quick", detail: "Warm water (~40 °C), extra yeast and a touch of honey force a fast rise — ready in as little as an hour.", icon: "bolt.fill", tint: .warm),
+        .init(term: "Warm Proof", detail: "A room-temperature rise over several hours (often overnight). Simple and reliable.", icon: "house.fill", tint: .amber),
+        .init(term: "Cold Proof", detail: "24–72 h in the fridge — less yeasty, deeper flavour, more digestible. Let it warm up before shaping.", icon: "snowflake", tint: .cool)
+    ]
+}
+
 /// A short, tappable explanation of one control — what it is, how it
-/// mathematically affects the dough, and the things that'll drive you crazy if
-/// you ignore them.
+/// mathematically affects the dough, named items as colour callouts, and the
+/// things that'll drive you crazy if you ignore them.
 struct InfoTopic: Identifiable, Equatable {
     let id: String
     let title: String
     let body: String
+    /// Optional heading shown above the definition callouts (e.g. "The methods").
+    var definitionsTitle: String = ""
+    /// Named items rendered as colour-coded callouts.
+    var definitions: [InfoDefinition] = []
     /// One or more "things that will drive you crazy" — shown as bullet points.
     let gotcha: [String]
 
@@ -31,14 +70,26 @@ struct InfoTopic: Identifiable, Equatable {
         ])
 
     static let yeast = InfoTopic(id: "yeast", title: "Yeast or starter",
-        body: "The leavening. You don't set the amount — it's worked out from time and temperature, then converted by type.\n\nMaths: instant (IDY) ×1, active dry ×1.25, fresh ×3. Sourdough is dosed as a % of flour instead, and its flour & water count toward the totals.\n\nCheck your yeast is in date and fresh — old or stale yeast simply won't rise. If unsure, proof a pinch in warm water with a little sugar; it should foam in 10 minutes.",
+        body: "The leavening. You don't set the amount — it's worked out from time and temperature, then converted by type.\n\nCheck your yeast is in date and fresh — old yeast simply won't rise. If unsure, proof a pinch in warm water with a little sugar; it should foam in 10 minutes.",
+        definitionsTitle: "The types",
+        definitions: [
+            .init(term: "Instant (IDY)", detail: "Mix straight into the flour. The baseline dose (×1).", icon: "bolt.fill", tint: .accent),
+            .init(term: "Active dry", detail: "About ×1.25 — best bloomed in warm water first.", icon: "drop.fill", tint: .cool),
+            .init(term: "Fresh", detail: "About ×3 — crumble it in. Perishable; keep it refrigerated.", icon: "cube.fill", tint: .amber),
+            .init(term: "Sourdough", detail: "A natural starter, dosed as a % of flour; its flour & water count toward the totals.", icon: "leaf.fill", tint: .sage)
+        ],
         gotcha: [
             "Dead yeast is the #1 villain behind flat, sad dough. RIP.",
             "Water hotter than ~50 °C murders it; fridge-cold water just makes it hit snooze."
         ])
 
     static let preferment = InfoTopic(id: "preferment", title: "Pre-ferment",
-        body: "A poolish or biga ferments part of the flour ahead for deeper flavour and strength.\n\nMaths: we carve the pre-ferment's flour and water out of the totals, so your overall hydration stays exactly what you set. Poolish is 100% hydration (~30% of flour); biga ~50% hydration (~50% of flour).",
+        body: "A poolish or biga ferments part of the flour ahead for deeper flavour and strength.\n\nMaths: we carve the pre-ferment's flour and water out of the totals, so your overall hydration stays exactly what you set.",
+        definitionsTitle: "The types",
+        definitions: [
+            .init(term: "Poolish", detail: "100% hydration (~30% of the flour). Loose and bubbly — boosts extensibility and flavour.", icon: "drop.fill", tint: .cool),
+            .init(term: "Biga", detail: "~50% hydration (~50% of the flour). Stiff — adds strength and a deeper aroma.", icon: "square.stack.3d.up.fill", tint: .amber)
+        ],
         gotcha: [
             "Over-ferment the poolish and it collapses with a boozy whiff — use it domed and bubbly, not sunken and sulking."
         ])
@@ -50,7 +101,9 @@ struct InfoTopic: Identifiable, Equatable {
         ])
 
     static let ferment = InfoTopic(id: "ferment", title: "Fermentation method",
-        body: "Quick: warm water (~40 °C), extra yeast and a little honey force a rise in about 3 hours (serve time jumps to now + 3 h).\nWarm: a room-temperature rise over several hours.\nCold: 24–72 h in the fridge (~4 °C) for deeper flavour.\n\nMaths: each sets the time and temperature behind the yeast dose. Cold uses fridge temperature, so far less yeast; quick triples the dose for speed.",
+        body: "How the main rise is run — it sets the time and temperature behind the yeast dose (and, for Quick, an accelerated, enriched recipe).\n\nMaths: cold uses fridge temperature, so far less yeast; quick triples the dose for speed.",
+        definitionsTitle: "The methods",
+        definitions: InfoDefinition.fermentMethods,
         gotcha: [
             "Cold dough needs to warm up before shaping — straight from the fridge it's tight, grumpy, and tears at the first stretch."
         ])
@@ -70,25 +123,34 @@ struct InfoTopic: Identifiable, Equatable {
         ])
 
     static let schedule = InfoTopic(id: "schedule", title: "When will you serve?",
-        body: "Pick when you want to eat; the whole plan is worked backward from there. Set the serve time (or, for Quick, how soon) and the app tells you when to start.\n\nMaths: a dough needs a set amount of fermentation (from temperature + method), so start = serve − (pre-ferment + bulk + proof).\n\nNot enough time? Rather than just rushing, the app first nudges the plan to fit — it warms the proof and raises the yeast so the dough still rises properly in the window you have. You'll see an \"auto-adjusted\" note when it does this. If it still can't fit even warm, it flags the plan and offers a Quick dough.",
+        body: "Pick when you want to eat; the whole plan is worked backward from there. Set the serve time (or, for Quick, how soon) and the app tells you when to start.\n\nMaths: a dough needs a set amount of fermentation, so start = serve − (pre-ferment + bulk + proof). The fermentation method you pick sets how long that is:",
+        definitionsTitle: "How each method shifts your start time",
+        definitions: InfoDefinition.fermentMethods,
         gotcha: [
-            "Leave a buffer! Stretching, topping and baking each pizza always takes longer than your optimistic brain thinks — especially one oven at a time."
+            "Leave a buffer! Stretching, topping and baking each pizza always takes longer than your optimistic brain thinks — especially one oven at a time.",
+            "Tight on time? The app first warms the proof and nudges the yeast to fit your window (you'll see an \"auto-adjusted\" note) before it ever suggests a Quick dough."
         ])
 
     static let glutenFree = InfoTopic(id: "gluten-free", title: "Gluten free",
-        body: "Gluten-free swaps the wheat flour for a blend (rice, tapioca, sorghum and so on) and adds a binder to do gluten's job of holding the dough together.\n\nWhat changes: with no gluten network, the dough needs much more water — we raise hydration to a per-style target (around 75–80% for pan styles, higher for thin/Neapolitan). Salt stays about the same (~2%). There's no kneading to build gluten, and no biga or poolish (there's no gluten for them to strengthen) — a long cold rest still helps flavour.\n\nHandling: you press or roll the dough out with oiled hands rather than stretching or tossing it, and it's best to par-bake the base before adding toppings.",
+        body: "Gluten-free swaps the wheat flour for a blend (rice, tapioca, sorghum and so on) and adds a binder to do gluten's job of holding the dough together.\n\nWhat changes: with no gluten network, the dough needs much more water — we raise hydration to a per-style target (around 75–80% for pan styles, higher for thin/Neapolitan). Salt stays about the same (~2%). There's no kneading, and no biga or poolish — a long cold rest still helps flavour.\n\nHandling: press or roll the dough out with oiled hands rather than stretching, and par-bake the base before adding toppings.",
         gotcha: [
             "Don't double up on binder if your blend already lists xanthan or psyllium — it's the #1 cause of a gummy, gluey GF crust. Flip on 'binder already in my blend' and relax."
         ])
 
     static let binder = InfoTopic(id: "binder", title: "Binder (gluten substitute)",
-        body: "A hydrocolloid binder replaces the stretch and gas-holding that gluten normally provides.\n\nXanthan gum: a little does a lot — about 2% of the flour. Quick cohesion and chew.\nPsyllium husk: used a touch heavier — about 3–4% — and gives a breadier, more flexible structure that holds water well.\n\nMaths: the binder is dosed as a baker's percentage of the gluten-free flour blend, just like salt or oil.",
+        body: "A hydrocolloid binder replaces the stretch and gas-holding that gluten normally provides.\n\nMaths: the binder is dosed as a baker's percentage of the gluten-free flour blend, just like salt or oil.",
+        definitionsTitle: "The options",
+        definitions: [
+            .init(term: "Xanthan gum", detail: "A little does a lot — about 2% of the flour. Quick cohesion and chew.", icon: "circle.hexagongrid.fill", tint: .sage),
+            .init(term: "Psyllium husk", detail: "A touch heavier — about 3–4%. Breadier and flexible; holds water well.", icon: "leaf.fill", tint: .cool)
+        ],
         gotcha: [
             "Loads of shop-bought GF flours already pack a binder. Add more and the crust turns slimy and gummy — read the label, then switch the added binder off if it's already in there."
         ])
 }
 
-/// The sheet that shows a single topic, including the things that'll drive you crazy.
+/// The sheet that shows a single topic: blurb, colour-coded definitions, and the
+/// things that'll drive you crazy.
 struct InfoSheet: View {
     let topic: InfoTopic
     var humourEnabled: Bool = true
@@ -105,53 +167,16 @@ struct InfoSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    if !topic.gotcha.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "hand.raised.fingers.spread.fill")
-                                Text("Things that will drive you crazy")
-                            }
-                            .font(.rounded(13, weight: .bold))
-                            .foregroundStyle(Palette.amber)
+                    if !topic.definitions.isEmpty {
+                        definitionsSection
+                    }
 
-                            VStack(alignment: .leading, spacing: 6) {
-                                ForEach(topic.gotcha, id: \.self) { point in
-                                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                        Text("•")
-                                            .font(.rounded(15, weight: .bold))
-                                            .foregroundStyle(Palette.amber)
-                                        Text(point)
-                                            .font(.rounded(14))
-                                            .foregroundStyle(Palette.text)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.amber.opacity(0.30), lineWidth: 1))
+                    if !topic.gotcha.isEmpty {
+                        gotchaSection
                     }
 
                     if humourEnabled {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "party.popper.fill")
-                                Text("While the yeast works…")
-                            }
-                            .font(.rounded(13, weight: .bold))
-                            .foregroundStyle(Palette.sage)
-                            Text(joke)
-                                .font(.rounded(14))
-                                .italic()
-                                .foregroundStyle(Palette.text)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .padding(14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.sage.opacity(0.12)))
+                        jokeSection
                     }
                 }
                 .padding(20)
@@ -172,5 +197,88 @@ struct InfoSheet: View {
         }
         .presentationDetents([.medium, .large])
         .tint(Palette.accent)
+    }
+
+    // MARK: Sections
+
+    private var definitionsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !topic.definitionsTitle.isEmpty {
+                Text(topic.definitionsTitle.uppercased())
+                    .font(.rounded(11, weight: .bold))
+                    .foregroundStyle(Palette.textSoft)
+            }
+            ForEach(topic.definitions) { def in
+                HStack(alignment: .top, spacing: 11) {
+                    Image(systemName: def.icon)
+                        .font(.rounded(15, weight: .bold))
+                        .foregroundStyle(def.tint.color)
+                        .frame(width: 24, height: 24)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(def.term)
+                            .font(.rounded(14, weight: .bold))
+                            .foregroundStyle(Palette.text)
+                        Text(def.detail)
+                            .font(.rounded(13))
+                            .foregroundStyle(Palette.textSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(def.tint.color.opacity(0.10)))
+                .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(def.tint.color.opacity(0.30), lineWidth: 1))
+            }
+        }
+    }
+
+    private var gotchaSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "hand.raised.fingers.spread.fill")
+                Text("Things that will drive you crazy")
+            }
+            .font(.rounded(13, weight: .bold))
+            .foregroundStyle(Palette.amber)
+
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(topic.gotcha, id: \.self) { point in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("•")
+                            .font(.rounded(15, weight: .bold))
+                            .foregroundStyle(Palette.amber)
+                        Text(point)
+                            .font(.rounded(14))
+                            .foregroundStyle(Palette.text)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.amber.opacity(0.30), lineWidth: 1))
+    }
+
+    private var jokeSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "party.popper.fill")
+                Text("While the yeast works…")
+            }
+            .font(.rounded(13, weight: .bold))
+            .foregroundStyle(Palette.sage)
+            Text(joke)
+                .font(.rounded(14))
+                .italic()
+                .foregroundStyle(Palette.text)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.sage.opacity(0.12)))
     }
 }

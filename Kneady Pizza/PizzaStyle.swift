@@ -111,6 +111,15 @@ struct PizzaStyle: Identifiable, Hashable {
         }
     }
 
+    /// Sensible default number of pieces when this style is selected. Big single
+    /// pan bakes (focaccia) default to one; round pizzas to a small batch.
+    var defaultCount: Int {
+        switch id {
+        case "focaccia": return 1
+        default:         return 6
+        }
+    }
+
     /// How well the style survives going gluten-free.
     var glutenFreeViability: GFViability {
         switch id {
@@ -287,20 +296,20 @@ struct PizzaStyle: Identifiable, Hashable {
         id: "focaccia",
         name: "Focaccia",
         blurb: "Pillowy, oil-rich pan bread. Dimpled and golden.",
-        details: "Rectangular and deep — a very wet (~78%) dough proofed in a generously oiled pan, then dimpled with oiled fingers and bathed in an olive-oil brine. Baked at a moderate ~220 °C (not a pizza-oven blast) for 20–25 minutes until golden and crisp underneath, airy and soft within. Classic toppings are just rosemary and flaky salt; cherry tomatoes or olives are lovely too.",
+        details: "Rectangular and deep — a very wet (~82%) dough built with several stretch-and-folds, proofed in a generously oiled pan, then dimpled with oiled fingers and bathed in an olive-oil brine. Baked at a moderate ~220 °C (not a pizza-oven blast) for 20–25 minutes until golden and crisp underneath, airy and soft within. Classic toppings are just rosemary and flaky salt; cherry tomatoes or olives are lovely too.",
         shape: .rectangular,
-        hydration: 0.78,
+        hydration: 0.82,
         salt: 0.022,
         oil: 0.05,
         honey: 0.0,
-        hydrationRange: 0.72...0.90,
+        hydrationRange: 0.78...0.95,
         thicknessFactor: 0.80,      // thick and pillowy
-        defaultBallWeight: 650,
+        defaultBallWeight: 1100,
         referenceIDY: 0.0090,
         yeasts: [.IDY, .ADY, .SD],
         assembly: "Dimple with oiled fingers, drizzle an oil-water-salt brine into the dips, then scatter rosemary and flaky salt.",
-        defaultPreferment: .biga,
-        defaultAutolyse: true
+        defaultPreferment: .none,   // strength comes from stretch-and-folds, not a biga
+        defaultAutolyse: false
     )
 
     /// Every style the app knows about, in display order (My Favourite is shown

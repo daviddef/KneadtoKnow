@@ -2,12 +2,13 @@ import SwiftUI
 import Combine
 
 enum ActiveSheet: Identifiable {
-    case planner, stylePicker, info(InfoTopic)
+    case planner, stylePicker, info(InfoTopic), selectionTips
     var id: String {
         switch self {
         case .planner: return "planner"
         case .stylePicker: return "stylePicker"
         case .info(let t): return "info-\(t.id)"
+        case .selectionTips: return "selectionTips"
         }
     }
 }
@@ -137,10 +138,12 @@ struct ContentView: View {
         .onChange(of: vm.input.keepItSimple) { _, simple in
             if simple {
                 // The style takes over sizing, and the default plan becomes
-                // a Quick proof ready in 12 hours.
+                // a Quick proof ready in 12 hours. Simple mode also adopts the
+                // friendly Vibrant look.
                 vm.input.sizeMode = .weight
                 vm.input.ballWeight = vm.input.style.defaultBallWeight
                 vm.applySimpleProofDefault()
+                themeManager.theme = .fun
             } else {
                 // Advanced mode reveals the recipe proportions, open by default.
                 collapsed.remove("proportions")
@@ -154,6 +157,8 @@ struct ContentView: View {
                 StylePickerView(vm: vm)
             case .info(let topic):
                 InfoSheet(topic: topic, humourEnabled: vm.input.humourEnabled)
+            case .selectionTips:
+                SelectionTipsSheet(input: vm.input)
             }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
@@ -274,53 +279,66 @@ struct ContentView: View {
         .padding(.bottom, 6)
     }
 
-    // Always-visible total — tap to jump to the directions.
+    // Always-visible total — tap for tailored tips; arrow jumps to the directions.
     private func totalBanner(_ proxy: ScrollViewProxy) -> some View {
-        Button {
-            Haptics.tap()
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                collapsed.remove("directions")
-                proxy.scrollTo("directions", anchor: .top)
-            }
-        } label: {
-            HStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Total dough")
-                        .font(.rounded(12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-                    HStack(spacing: 3) {
-                        Image(systemName: "clock")
-                        Text("\(Scheduler.durationShort(vm.schedule.totalHours)) prep · \(Scheduler.durationShort(vm.schedule.leadHours)) serve")
+        HStack(spacing: 10) {
+            Button {
+                Haptics.tap()
+                activeSheet = .selectionTips
+            } label: {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Total dough")
+                            .font(.rounded(12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.85))
+                        HStack(spacing: 3) {
+                            Image(systemName: "clock")
+                            Text("\(Scheduler.durationShort(vm.schedule.totalHours)) prep · \(Scheduler.durationShort(vm.schedule.leadHours)) serve")
+                        }
+                        .font(.rounded(11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     }
-                    .font(.rounded(11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    Spacer()
+                    Text(Units.weight(vm.result.totalWeight, metric: vm.metric))
+                        .font(.rounded(18, weight: .bold))
+                        .foregroundStyle(.white)
+                        .contentTransition(.numericText(value: vm.result.totalWeight))
+                        .animation(Palette.isVibrant ? .snappy(duration: 0.5) : nil,
+                                   value: vm.result.totalWeight)
+                    Text("· \(vm.input.ballCount) × \(Units.weight(vm.result.ballWeight, metric: vm.metric))")
+                        .font(.rounded(12))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .lineLimit(1)
+                    Image(systemName: "lightbulb.fill")
+                        .font(.rounded(14, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
                 }
-                Spacer()
-                Text(Units.weight(vm.result.totalWeight, metric: vm.metric))
-                    .font(.rounded(18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .contentTransition(.numericText(value: vm.result.totalWeight))
-                    .animation(Palette.isVibrant ? .snappy(duration: 0.5) : nil,
-                               value: vm.result.totalWeight)
-                Text("· \(vm.input.ballCount) × \(Units.weight(vm.result.ballWeight, metric: vm.metric))")
-                    .font(.rounded(12))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .lineLimit(1)
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.rounded(15, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.85))
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 11)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Palette.accent)
-            )
-            .shadow(color: Palette.shadowDark, radius: 8, x: 0, y: 4)
+            .buttonStyle(.plain)
+
+            Button {
+                Haptics.tap()
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                    collapsed.remove("directions")
+                    proxy.scrollTo("directions", anchor: .top)
+                }
+            } label: {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.rounded(20, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Palette.accent)
+        )
+        .shadow(color: Palette.shadowDark, radius: 8, x: 0, y: 4)
         .padding(.horizontal, 20)
         .padding(.bottom, 8)
     }
@@ -530,7 +548,7 @@ struct ContentView: View {
                         )
                     }
                 } else {
-                    let wRange: ClosedRange<Double> = shape == .round ? 150...400 : 300...900
+                    let wRange: ClosedRange<Double> = shape == .round ? 150...400 : 300...1500
                     TactileSlider(
                         title: shape == .round ? "Weight per ball" : "Weight per pan",
                         value: $vm.input.ballWeight,
@@ -1022,6 +1040,7 @@ struct ContentView: View {
     private var simpleSetupCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             styleDropdownButton
+            glutenFreeControls
             TactileStepper(title: "How many pizzas?", value: $vm.input.ballCount, range: 1...30)
 
             Divider().overlay(Palette.textSoft.opacity(0.15))

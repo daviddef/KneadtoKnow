@@ -80,12 +80,15 @@ enum Scheduler {
         let count = max(input.ballCount, 1)
         let noun = input.style.shape.nounPlural
         let isRound = input.style.shape == .round
-        let divideTitle = isRound ? "Ball Roll" : "Into Pans"
+        let isFocaccia = input.style.id == "focaccia"
+        let divideTitle = isFocaccia ? "Into the Pan" : (isRound ? "Ball Roll" : "Into Pans")
 
         // Mix-step detail (varies by quick / pre-ferment).
         let mixTitle = "The Dough"
         let mixDetail: String
-        if input.useAutolyse {
+        if isFocaccia {
+            mixDetail = "Mix the flour, water, salt, yeast and oil into a wet, sticky dough — no real kneading needed. You'll build the strength with a few stretch-and-folds instead, so just bring it together, cover and rest."
+        } else if input.useAutolyse {
             if pref {
                 mixDetail = "Bring the two big pieces together: add the whole \(input.preferment.name.lowercased()) and the salt (plus any oil or honey) to the autolyse — your rested bowl of flour and water. Knead it all until smooth and elastic, then lightly oil the bowl, cover and leave to rise."
             } else {
@@ -149,7 +152,7 @@ enum Scheduler {
             let proofLoc: StepLocation = warmed ? .warm : .room
             segs.append(Seg(icon: "fork.knife", title: mixTitle, detail: mixDetail, rest: bulk, loc: proofLoc, active: true))
             segs.append(Seg(icon: "circle.grid.2x2", title: divideTitle,
-                            detail: divideDetail(isRound: isRound, count: count, noun: noun, cold: false),
+                            detail: divideDetail(isRound: isRound, count: count, noun: noun, cold: false, styleID: input.style.id),
                             rest: proof, loc: proofLoc, active: true))
             yeastHours = bulk + proof
             yeastTemp = proofTemp
@@ -160,7 +163,7 @@ enum Scheduler {
             isTight = coldHours < 24
             segs.append(Seg(icon: "fork.knife", title: mixTitle, detail: mixDetail, rest: coldRoomBulk, loc: .room, active: true))
             segs.append(Seg(icon: "circle.grid.2x2", title: divideTitle,
-                            detail: divideDetail(isRound: isRound, count: count, noun: noun, cold: true),
+                            detail: divideDetail(isRound: isRound, count: count, noun: noun, cold: true, styleID: input.style.id),
                             rest: coldHours, loc: .fridge, active: true))
             segs.append(Seg(icon: "sun.max.fill", title: "Ready It",
                             detail: "Bring the dough out of the fridge so it comes back to room temperature before shaping.",
@@ -177,10 +180,31 @@ enum Scheduler {
             let proof = clamp(pool * 0.4, 0.25, 1)
             segs.append(Seg(icon: "fork.knife", title: mixTitle, detail: mixDetail, rest: rise, loc: .warm, active: true))
             segs.append(Seg(icon: "circle.grid.2x2", title: divideTitle,
-                            detail: divideDetail(isRound: isRound, count: count, noun: noun, cold: false),
+                            detail: divideDetail(isRound: isRound, count: count, noun: noun, cold: false, styleID: input.style.id),
                             rest: proof, loc: .warm, active: true))
             yeastHours = rise + proof
             yeastTemp = quickTemp
+        }
+
+        // Focaccia builds strength with stretch-and-folds during the early bulk,
+        // then a long undisturbed rise — split the single bulk step accordingly.
+        if isFocaccia, let i = segs.firstIndex(where: { $0.title == mixTitle }) {
+            let bulk = segs[i].rest
+            let foldWindow = min(2.0, max(0, bulk - 0.5) * 0.6)
+            if foldWindow >= 0.5 {
+                let leadIn = 0.25
+                let after = max(0, bulk - foldWindow - leadIn)
+                let mix = segs[i]
+                segs[i] = Seg(icon: mix.icon, title: mixTitle, detail: mix.detail,
+                              rest: leadIn, loc: mix.loc, active: true)
+                let folds = Seg(icon: "hands.and.sparkles.fill", title: "Stretch & Folds",
+                                detail: "Do 3–4 sets of stretch-and-folds, about every 30 minutes. With a wet hand, grab one side of the dough, stretch it up and fold it over to the middle; turn the bowl a quarter-turn and repeat all the way round. The dough firms up and traps air with each set.",
+                                rest: foldWindow, loc: mix.loc, active: true)
+                let rise = Seg(icon: "wind", title: "Bulk Rise",
+                               detail: "Now leave the dough undisturbed and covered until puffy and well risen — almost doubled and full of bubbles.",
+                               rest: after, loc: mix.loc, active: false)
+                segs.insert(contentsOf: [folds, rise], at: i + 1)
+            }
         }
 
         let total = segs.reduce(0) { $0 + $1.rest }
@@ -197,18 +221,26 @@ enum Scheduler {
                 gotcha: gotchaFor(seg.title)))
             cursor = cursor.addingTimeInterval(seg.rest * 3600)
         }
+        let shapeTitle: String
+        let shapeIcon: String
         let shapeDetail: String
-        if isRound {
+        if isFocaccia {
+            shapeTitle = "Dimple & Brine"
+            shapeIcon = "circle.dotted"
+            shapeDetail = "Now that it's risen in the pan, stretch it gently to the corners if it hasn't filled out. With well-oiled fingers, dimple the dough all over — press right down to the base to make deep dips. Whisk a little olive oil, water and salt into a brine and drizzle it over so it pools in the dimples."
+        } else if isRound {
+            shapeTitle = "Shape It"
+            shapeIcon = "hand.draw.fill"
             shapeDetail = "Gently stretch each ball by hand, dusting the bench with fine semolina (not flour) so it slides cleanly off the peel."
-        } else if input.style.id == "focaccia" {
-            shapeDetail = "Stretch the dough to fill the oiled pan, then dimple all over with well-oiled fingers."
         } else {
+            shapeTitle = "Shape It"
+            shapeIcon = "hand.draw.fill"
             shapeDetail = "Press the dough out to the corners of the oiled pan and dimple it."
         }
         steps.append(ScheduleStep(
-            icon: "hand.draw.fill", title: "Shape It", detail: shapeDetail,
+            icon: shapeIcon, title: shapeTitle, detail: shapeDetail,
             time: serve, leadHours: 0, restLocation: .room, isActive: true, awkward: false,
-            gotcha: gotchaFor("Shape It")))
+            gotcha: gotchaFor(shapeTitle)))
         steps.append(ScheduleStep(
             icon: "fork.knife.circle.fill", title: "Top It",
             detail: "Topping order: \(input.style.assembly)",
@@ -227,7 +259,12 @@ enum Scheduler {
         )
     }
 
-    private static func divideDetail(isRound: Bool, count: Int, noun: String, cold: Bool) -> String {
+    private static func divideDetail(isRound: Bool, count: Int, noun: String, cold: Bool, styleID: String = "") -> String {
+        if styleID == "focaccia" {
+            return cold
+                ? "Tip the dough into a well-oiled pan and gently coax it toward the edges (it needn't reach them yet). Cover and refrigerate."
+                : "Tip the dough into a well-oiled pan and gently coax it toward the edges (it needn't reach them yet). Cover and leave to proof until pillowy."
+        }
         if !isRound {
             return cold
                 ? "Divide into \(count) oiled \(noun), cover and refrigerate."
@@ -249,6 +286,14 @@ enum Scheduler {
             return "Under-kneaded dough can't hold gas, so knead until smooth and stretchy. Water hotter than ~50 °C kills the yeast."
         case "Ball Roll", "Into Pans":
             return "Dust with semolina, not flour (flour gets absorbed and sticks). Ball them tight and smooth so they hold shape, not spread."
+        case "Into the Pan":
+            return "Use a properly oiled pan — focaccia sticks fiercely otherwise. Don't force it to the edges yet; it'll relax and spread as it proofs."
+        case "Stretch & Folds":
+            return "Wet your hand so the dough doesn't stick, and be gentle — you're building strength, not knocking the air out. If it's already smooth and elastic, you can stop early."
+        case "Bulk Rise":
+            return "Go by the look, not the clock — it's ready when puffy and bubbly. A cold kitchen takes longer; a warm one races ahead."
+        case "Dimple & Brine":
+            return "Oil your fingers well and commit — timid dimples puff flat in the oven. Dimple just before baking, not long before, or they'll fade."
         case "Ready It":
             return "Shape it cold and it tears — let the dough come fully back to room temperature first (~2 h)."
         case "Shape It":
