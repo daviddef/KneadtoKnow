@@ -404,6 +404,13 @@ final class DoughViewModel: ObservableObject {
         FavouriteStore.clear()
         hasFavourite = false
         autosaveFavourite = false   // nothing to keep in sync
+        // Turning the favourite off resets the setup to app defaults — it should
+        // stop remembering the recipe, pizza choices and extras.
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            input.applyDefaults(of: Self.defaultStyle(for: experienceLevel))
+            pizzaSelection = [:]
+            extras = []
+        }
         Haptics.tap()
     }
 
