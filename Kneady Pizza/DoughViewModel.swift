@@ -217,7 +217,9 @@ final class DoughViewModel: ObservableObject {
     /// keep that duration steady — which keeps the Start time current too.
     func refreshNow() {
         let newNow = Date()
-        if input.ferment == .quick {
+        // A quick proof keeps "ready in N hours" rolling forward — but never once
+        // a bake is underway, where the times are locked to the start.
+        if input.ferment == .quick && activeBake == nil {
             let readyIn = min(max(input.serveDate.timeIntervalSince(now), 3600), 24 * 3600)
             input.serveDate = newNow.addingTimeInterval(readyIn)
         }
@@ -363,17 +365,35 @@ final class DoughViewModel: ObservableObject {
         if !silent { Haptics.success() }
     }
 
+    /// Start cooking now: freeze the plan's reference time so the directions'
+    /// clock times lock in and stop shifting when the app is reopened.
+    func startBake() {
+        now = Date()
+        resetServeToEarliest()   // serve = now + full plan, so the first step is now
+        let bake = ActiveBake(recipe: currentSavedRecipe(),
+                              completedSteps: [],
+                              totalSteps: schedule.steps.count,
+                              anchorDate: now)
+        BakeStore.save(bake)
+        activeBake = bake
+        Haptics.success()
+    }
+
     /// Remembers the current bake while it's underway. Called whenever the user
-    /// ticks a step. Once every step is done (or none are) there's nothing to
-    /// keep, so the active bake is cleared.
+    /// ticks a step. Ticking the first step auto-starts a bake; ticking the last
+    /// finishes it (and clears it).
     func recordBakeProgress(completed: Set<Int>, totalSteps: Int) {
-        guard !completed.isEmpty, completed.count < totalSteps else {
-            if activeBake != nil { BakeStore.clear(); activeBake = nil }
+        // Finished — every step ticked, so there's nothing left to cook.
+        if !completed.isEmpty, completed.count >= totalSteps {
+            BakeStore.clear(); activeBake = nil
             return
         }
+        // Only record once a bake exists (via Go) or the first step is ticked.
+        guard activeBake != nil || !completed.isEmpty else { return }
         let bake = ActiveBake(recipe: currentSavedRecipe(),
                               completedSteps: Array(completed).sorted(),
-                              totalSteps: totalSteps)
+                              totalSteps: totalSteps,
+                              anchorDate: activeBake?.anchorDate ?? now)
         BakeStore.save(bake)
         activeBake = bake
     }
@@ -499,8 +519,13 @@ final class DoughViewModel: ObservableObject {
         Haptics.select()
     }
 
+    /// The instant the plan is built against. Once a bake is underway it's
+    /// frozen at the start time, so the directions' clock times stay put even
+    /// as real time marches on (and the app is reopened).
+    var scheduleNow: Date { activeBake?.anchorDate ?? now }
+
     /// The live bake plan, worked backward from the serve time.
-    var schedule: Schedule { Scheduler.build(input: input, now: now) }
+    var schedule: Schedule { Scheduler.build(input: input, now: scheduleNow) }
 
     /// The live recipe — recomputed automatically as inputs change.
     var result: DoughResult { DoughCalculator.calculate(input, schedule: schedule) }

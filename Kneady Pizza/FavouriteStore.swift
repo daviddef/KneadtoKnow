@@ -42,6 +42,9 @@ struct ActiveBake: Codable {
     var recipe: SavedRecipe
     var completedSteps: [Int]
     var totalSteps: Int
+    /// The "now" captured when the bake started — the schedule is built against
+    /// this frozen instant so the directions' clock times never shift.
+    var anchorDate: Date? = nil
 }
 
 /// Persists the bake the user is currently cooking, so it survives app exits.

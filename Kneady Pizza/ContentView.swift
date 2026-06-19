@@ -1226,15 +1226,54 @@ struct ContentView: View {
     }
 
     @ViewBuilder private var timelineView: some View {
-        TimelineView(schedule: vm.schedule, now: vm.now,
-                     onInfo: { step in activeSheet = .info(stepInfo(for: step)) },
-                     itemsFor: { vm.stepItems(for: $0) },
-                     toppingPlan: vm.toppingPlan(),
-                     toppingAdvice: vm.toppingAdvice,
-                     metric: vm.metric,
-                     completed: completedSteps,
-                     onToggleDone: { toggleStepDone($0) },
-                     onExpand: { expandedStep = $0 })
+        VStack(alignment: .leading, spacing: 14) {
+            startBakeBar
+            TimelineView(schedule: vm.schedule, now: vm.now,
+                         onInfo: { step in activeSheet = .info(stepInfo(for: step)) },
+                         itemsFor: { vm.stepItems(for: $0) },
+                         toppingPlan: vm.toppingPlan(),
+                         toppingAdvice: vm.toppingAdvice,
+                         metric: vm.metric,
+                         completed: completedSteps,
+                         onToggleDone: { toggleStepDone($0) },
+                         onExpand: { expandedStep = $0 })
+        }
+    }
+
+    /// Before a bake: a "Start baking now" button that locks the times. During a
+    /// bake: a note that the times are pinned to the start.
+    @ViewBuilder private var startBakeBar: some View {
+        if vm.activeBake == nil {
+            VStack(alignment: .leading, spacing: 6) {
+                Button {
+                    completedSteps.removeAll()
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                        vm.startBake()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "play.fill")
+                        Text("Start baking now")
+                    }
+                    .font(.rounded(15, weight: .bold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(TactileButtonStyle(isProminent: true))
+                Text("Locks these times to your start, so they won't reset when you reopen the app.")
+                    .font(.rounded(11))
+                    .foregroundStyle(Palette.textSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        } else {
+            HStack(spacing: 6) {
+                Image(systemName: "lock.fill")
+                Text("Times locked to your start. Cancel from the banner up top to reset.")
+            }
+            .font(.rounded(11, weight: .medium))
+            .foregroundStyle(Palette.sage)
+            .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     /// Tap a step to mark it (and the steps before it) done; tap again to
