@@ -4,8 +4,8 @@ import Foundation
 /// (for quick) an accelerated, enriched recipe.
 enum FermentStyle: String, CaseIterable, Identifiable, Codable {
     case quick      // warm, lots of yeast + honey, ~1–24 h
-    case sameDay    // room temperature, ~12–20 h
     case cold       // fridge, 24–72 h
+    case sameDay    // room temperature, ~12–20 h
 
     var id: String { rawValue }
 

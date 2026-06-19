@@ -99,6 +99,11 @@ enum RecipeCatalog {
                                  .init("Prosciutto crudo", 40), .init("Rocket", 20, scales: false),
                                  .init("Parmesan shavings", 20)],
                       assembly: "Bake with sauce & mozzarella; after baking add prosciutto, rocket and parmesan."),
+                .init(id: "neapolitan-prosciutto", name: "Prosciutto & Rocket",
+                      toppings: [.init("San Marzano tomato", 80), .init("Fior di latte mozzarella", 100),
+                                 .init("Prosciutto", 40), .init("Rocket", 20, scales: false),
+                                 .init("Parmesan shavings", 15)],
+                      assembly: "Bake with sauce & mozzarella; after baking pile on prosciutto, rocket and parmesan."),
                 .init(id: "hawaiian-omg", name: "Hawaiian 🍍 (OMG pineapple)",
                       toppings: [.init("San Marzano tomato", 80), .init("Fior di latte mozzarella", 100),
                                  .init("Ham", 60), .init("Pineapple (lots!)", 90)],
@@ -112,6 +117,10 @@ enum RecipeCatalog {
                 .init(id: "ny-pepperoni", name: "Pepperoni",
                       toppings: [.init("Tomato sauce", 90), .init("Low-moisture mozzarella", 120), .init("Pepperoni", 50)],
                       assembly: "Sauce, then mozzarella, then pepperoni on top."),
+                .init(id: "ny-prosciutto", name: "Prosciutto",
+                      toppings: [.init("Tomato sauce", 90), .init("Low-moisture mozzarella", 110),
+                                 .init("Prosciutto", 45), .init("Rocket", 20, scales: false)],
+                      assembly: "Bake with sauce & mozzarella; after baking pile on prosciutto and rocket."),
                 .init(id: "ny-hawaiian", name: "Hawaiian",
                       toppings: [.init("Tomato sauce", 90), .init("Low-moisture mozzarella", 110),
                                  .init("Ham", 60), .init("Pineapple", 50)],
@@ -129,6 +138,10 @@ enum RecipeCatalog {
                 .init(id: "rom-quattro", name: "Quattro Formaggi",
                       toppings: [.init("Mozzarella", 60), .init("Gorgonzola", 40), .init("Fontina", 40), .init("Parmesan", 20)],
                       assembly: "No tomato — scatter the four cheeses evenly."),
+                .init(id: "rom-prosciutto", name: "Prosciutto & Rocket",
+                      toppings: [.init("Tomato", 70), .init("Fior di latte mozzarella", 85),
+                                 .init("Prosciutto", 35), .init("Rocket", 15, scales: false)],
+                      assembly: "Thin sauce & light mozzarella; after baking add prosciutto and rocket."),
             ]
         case "detroit":
             return [
@@ -181,6 +194,10 @@ enum RecipeCatalog {
                       toppings: [.init("Tomato sauce", 80), .init("Mozzarella", 90), .init("Peppers", 40),
                                  .init("Mushrooms", 40), .init("Red onion", 30)],
                       assembly: "Sauce, mozzarella, then the vegetables."),
+                .init(id: "ev-prosciutto", name: "Prosciutto & Rocket",
+                      toppings: [.init("Tomato sauce", 80), .init("Mozzarella", 90),
+                                 .init("Prosciutto", 40), .init("Rocket", 20, scales: false), .init("Parmesan", 15)],
+                      assembly: "Bake with sauce & mozzarella; after baking add prosciutto, rocket and parmesan."),
             ]
         }
     }
@@ -229,4 +246,16 @@ enum RecipeCatalog {
     static func selectedRecipes(styleID: String, selection: [String: Int]) -> [PizzaRecipe] {
         recipes(for: styleID).filter { (selection[$0.id] ?? 0) > 0 }
     }
+
+    /// True for the pineapple-bearing pizzas (Hawaiian etc.).
+    static func isPineapple(_ recipe: PizzaRecipe) -> Bool {
+        recipe.toppings.contains { $0.name.lowercased().contains("pineapple") }
+    }
+
+    /// Common pizza toppings offered as quick checkboxes in the planner.
+    static let commonExtras = [
+        "Pepperoni", "Mushrooms", "Fresh basil", "Red onion",
+        "Black olives", "Capsicum", "Cherry tomatoes", "Prosciutto",
+        "Anchovies", "Fresh chilli", "Garlic", "Extra mozzarella",
+    ]
 }

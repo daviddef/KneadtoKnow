@@ -16,6 +16,28 @@ final class DoughViewModel: ObservableObject {
     @Published var extras: Set<String> = []
     /// Custom extras the user has saved as reusable options.
     @Published var favouriteExtras: [String] = []
+    /// When on, pineapple/Hawaiian recipes are hidden from the planner.
+    @Published var hidePineapple: Bool = PineappleStore.hidden {
+        didSet { PineappleStore.hidden = hidePineapple }
+    }
+
+    /// Recipes for a style, with pineapple filtered out when the user opted out.
+    func availableRecipes(for styleID: String) -> [PizzaRecipe] {
+        let all = RecipeCatalog.recipes(for: styleID)
+        guard hidePineapple else { return all }
+        return all.filter { !RecipeCatalog.isPineapple($0) }
+    }
+
+    /// Hide pineapple for good — drop any pineapple picks and remember it.
+    func neverShowPineapple() {
+        hidePineapple = true
+        for recipe in RecipeCatalog.recipes(for: input.style.id)
+        where RecipeCatalog.isPineapple(recipe) {
+            pizzaSelection[recipe.id] = nil
+        }
+        if hasFavourite || autosaveFavourite { saveFavourite(silent: true) }
+        Haptics.tap()
+    }
 
     var metric: Bool { Units.isMetric(input.lengthUnit) }
 
@@ -59,6 +81,7 @@ final class DoughViewModel: ObservableObject {
             input = DoughInput.from(fav)
             pizzaSelection = fav.pizzaSelection ?? [:]
             extras = Set(fav.extras ?? [])
+            hidePineapple = fav.hidePineapple ?? PineappleStore.hidden
             hasFavourite = true
             // Saved serve time is usually stale — fall back to the earliest.
             if input.serveDate <= Date() { resetServeToEarliest() }
@@ -189,13 +212,13 @@ final class DoughViewModel: ObservableObject {
         now = newNow
     }
 
-    /// Simple mode's default plan: a Quick proof, ready in 12 hours.
+    /// Simple mode's default plan: a Cold proof.
     func applySimpleProofDefault() {
         now = Date()
         withAnimation(.easeInOut) {
-            input.ferment = .sameDay   // Warm Proof by default
+            input.ferment = .cold   // Cold Proof by default
         }
-        resetServeToEarliest()         // soonest sensible serve for a warm proof
+        resetServeToEarliest()      // soonest sensible serve for a cold proof
     }
 
     /// The soonest (hours from now) a given proof method could be ready, using
@@ -317,6 +340,7 @@ final class DoughViewModel: ObservableObject {
         var rec = input.saved
         rec.pizzaSelection = pizzaSelection
         rec.extras = Array(extras)
+        rec.hidePineapple = hidePineapple
         FavouriteStore.save(rec)
         hasFavourite = true
         if !silent { Haptics.success() }
@@ -373,7 +397,7 @@ final class DoughViewModel: ObservableObject {
             input.humourLevel = .less
             select(style: style)
             pizzaSelection = starterSelection(for: style)
-            input.ferment = .sameDay
+            input.ferment = .cold
             resetServeToEarliest()
             autosaveFavourite = false
         }
@@ -420,6 +444,7 @@ final class DoughViewModel: ObservableObject {
             input = DoughInput.from(fav)
             pizzaSelection = fav.pizzaSelection ?? [:]
             extras = Set(fav.extras ?? [])
+            hidePineapple = fav.hidePineapple ?? PineappleStore.hidden
         }
         resetServeToEarliest()
         Haptics.select()

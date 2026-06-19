@@ -89,7 +89,7 @@ struct DoughInput {
     var temperatureC: Double = 20
 
     /// Quick (warm) / same-day (room) / cold (fridge) fermentation.
-    var ferment: FermentStyle = .sameDay
+    var ferment: FermentStyle = .cold
 
     /// Oven used for baking — sets the bake temperature/time advice.
     var oven: OvenType = .home

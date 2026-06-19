@@ -7,7 +7,7 @@ struct RecipePlannerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var newExtra = ""
 
-    private var recipes: [PizzaRecipe] { RecipeCatalog.recipes(for: vm.input.style.id) }
+    private var recipes: [PizzaRecipe] { vm.availableRecipes(for: vm.input.style.id) }
     private var savoury: [PizzaRecipe] { recipes.filter { $0.category == .savoury } }
     private var sweet: [PizzaRecipe] { recipes.filter { $0.category == .dessert } }
     private var total: Int { max(vm.input.ballCount, 1) }
@@ -78,25 +78,43 @@ struct RecipePlannerView: View {
 
     private func recipeRow(_ recipe: PizzaRecipe) -> some View {
         let count = vm.pizzaSelection[recipe.id] ?? 0
-        return HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(recipe.name)
-                    .font(.rounded(16, weight: .semibold))
-                    .foregroundStyle(Palette.text)
-                Text(recipe.assembly)
-                    .font(.rounded(11))
-                    .foregroundStyle(Palette.textSoft)
-                    .fixedSize(horizontal: false, vertical: true)
+        let showHidePineapple = vm.hasFavourite && RecipeCatalog.isPineapple(recipe)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(recipe.name)
+                        .font(.rounded(16, weight: .semibold))
+                        .foregroundStyle(Palette.text)
+                    Text(recipe.assembly)
+                        .font(.rounded(11))
+                        .foregroundStyle(Palette.textSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 10)
+                HStack(spacing: 12) {
+                    circle("minus") { vm.setRecipeCount(recipe.id, count - 1) }
+                    Text("\(count)")
+                        .font(.rounded(18, weight: .semibold))
+                        .foregroundStyle(count > 0 ? Palette.accent : Palette.textSoft)
+                        .frame(minWidth: 22)
+                        .contentTransition(.numericText())
+                    circle("plus") { vm.setRecipeCount(recipe.id, count + 1) }
+                }
             }
-            Spacer(minLength: 10)
-            HStack(spacing: 12) {
-                circle("minus") { vm.setRecipeCount(recipe.id, count - 1) }
-                Text("\(count)")
-                    .font(.rounded(18, weight: .semibold))
-                    .foregroundStyle(count > 0 ? Palette.accent : Palette.textSoft)
-                    .frame(minWidth: 22)
-                    .contentTransition(.numericText())
-                circle("plus") { vm.setRecipeCount(recipe.id, count + 1) }
+            if showHidePineapple {
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        vm.neverShowPineapple()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "nosign")
+                        Text("Never show me pineapple again")
+                    }
+                    .font(.rounded(12, weight: .semibold))
+                    .foregroundStyle(Palette.textSoft)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(16)
@@ -120,10 +138,29 @@ struct RecipePlannerView: View {
             Text("EXTRAS")
                 .font(.rounded(12, weight: .bold))
                 .foregroundStyle(Palette.textSoft)
-            Text("Anything else to buy — garlic bread, salad, drinks. Added ones are saved for next time.")
+            Text("Extra toppings to buy — tick the usual ones or add your own. Added ones are saved for next time.")
                 .font(.rounded(11))
                 .foregroundStyle(Palette.textSoft)
                 .fixedSize(horizontal: false, vertical: true)
+
+            let presets = RecipeCatalog.commonExtras.filter { !vm.favouriteExtras.contains($0) }
+            ForEach(presets, id: \.self) { name in
+                Button { vm.toggleExtra(name) } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: vm.extras.contains(name) ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(vm.extras.contains(name) ? Palette.accent : Palette.textSoft)
+                        Text(name)
+                            .font(.rounded(15))
+                            .foregroundStyle(Palette.text)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
+            if !vm.favouriteExtras.isEmpty {
+                Divider().overlay(Palette.textSoft.opacity(0.15))
+            }
 
             ForEach(vm.favouriteExtras, id: \.self) { name in
                 HStack {

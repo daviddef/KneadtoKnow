@@ -34,6 +34,16 @@ struct SavedRecipe: Codable {
     var glutenFree: Bool? = nil
     var binder: String? = nil
     var binderInBlend: Bool? = nil
+    var hidePineapple: Bool? = nil
+}
+
+/// Remembers the user's "never show me pineapple again" choice.
+enum PineappleStore {
+    private static let key = "hidePineapple.v1"
+    static var hidden: Bool {
+        get { UserDefaults.standard.bool(forKey: key) }
+        set { UserDefaults.standard.set(newValue, forKey: key) }
+    }
 }
 
 /// Remembers whether the favourite should update itself automatically.
