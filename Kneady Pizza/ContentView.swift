@@ -33,6 +33,8 @@ struct ContentView: View {
     @State private var jokeTicks = 0
     /// Indices of cooking-direction steps marked done (faded + struck through).
     @State private var completedSteps: Set<Int> = []
+    /// Brief "Saved as Favourite" confirmation toast.
+    @State private var showSavedToast = false
     private let jokeTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     /// Keeps "now" live so Start/Ready times track the real clock.
     @Environment(\.scenePhase) private var scenePhase
@@ -109,6 +111,7 @@ struct ContentView: View {
 
             menuOverlay
             jokeOverlay
+            savedToast
         }
         .id(themeManager.theme)   // rebuild the whole tree so a theme switch re-skins fully
         .tint(Palette.accent)
@@ -210,6 +213,36 @@ struct ContentView: View {
 
     private func showInfo(_ topic: InfoTopic) { activeSheet = .info(topic) }
 
+    /// A brief confirmation that flashes when the favourite is saved/updated.
+    @ViewBuilder private var savedToast: some View {
+        if showSavedToast {
+            VStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "star.fill")
+                    Text("Saved as Favourite")
+                }
+                .font(.rounded(15, weight: .bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Capsule().fill(Palette.accentFill))
+                .shadow(color: Palette.shadowDark, radius: 12, x: 0, y: 6)
+                .padding(.top, 64)
+                Spacer()
+            }
+            .transition(.move(edge: .top).combined(with: .opacity))
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func flashSavedToast() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showSavedToast = true }
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            withAnimation(.easeInOut) { showSavedToast = false }
+        }
+    }
+
     /// Pre-formatted estimated-cost strings for the summary (local currency).
     private var costStrings: (total: String, perPizza: String) {
         let c = vm.estimatedCost()
@@ -306,6 +339,7 @@ struct ContentView: View {
                 Button {
                     vm.saveFavourite()      // one-tap update of My Favourite
                     Haptics.success()
+                    flashSavedToast()
                 } label: {
                     Image(systemName: vm.hasFavourite ? "star.fill" : "star")
                         .font(.rounded(16, weight: .medium))
