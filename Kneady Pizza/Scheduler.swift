@@ -345,6 +345,26 @@ enum Scheduler {
         return "\(dayFmt.string(from: date)) \(time)"
     }
 
+    /// Just the time, e.g. "18:30" (no day word).
+    static func timeOnly(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_GB")
+        f.dateFormat = "HH:mm"
+        return f.string(from: date)
+    }
+
+    /// Just the day, e.g. "Today" / "Tomorrow" / "Wed 19" — for a day divider.
+    static func dayLabel(_ date: Date, now: Date) -> String {
+        let cal = Calendar.current
+        if cal.isDate(date, inSameDayAs: now) { return "Today" }
+        if let tomorrow = cal.date(byAdding: .day, value: 1, to: now),
+           cal.isDate(date, inSameDayAs: tomorrow) { return "Tomorrow" }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_GB")
+        f.dateFormat = "EEE d"
+        return f.string(from: date)
+    }
+
     static func duration(_ hours: Double) -> String {
         let totalMinutes = Int((hours * 60).rounded())
         let h = totalMinutes / 60

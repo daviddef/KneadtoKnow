@@ -18,7 +18,10 @@ struct TimelineView: View {
             ForEach(Array(schedule.steps.enumerated()), id: \.element.id) { idx, step in
                 let isLast = idx == schedule.steps.count - 1
                 let done = completed.contains(idx)
-                HStack(alignment: .top, spacing: 14) {
+                let dayChanged = idx > 0 && !Calendar.current.isDate(step.time, inSameDayAs: schedule.steps[idx - 1].time)
+                VStack(alignment: .leading, spacing: 0) {
+                    if dayChanged { dayDivider(step.time) }
+                    HStack(alignment: .top, spacing: 14) {
                     // Node + connecting line
                     VStack(spacing: 0) {
                         ZStack {
@@ -31,6 +34,8 @@ struct TimelineView: View {
                                 .font(.rounded(15, weight: .semibold))
                                 .foregroundStyle(done || isLast ? Color.white : Palette.accent)
                         }
+                        .contentShape(Circle())
+                        .onTapGesture { onToggleDone(idx) }
                         if !isLast {
                             Rectangle()
                                 .fill(Palette.textSoft.opacity(0.25))
@@ -55,9 +60,12 @@ struct TimelineView: View {
                             }
                             .buttonStyle(.plain)
                             Spacer()
-                            Text(Scheduler.clock(step.time, now: now))
-                                .font(.rounded(13, weight: .medium))
-                                .foregroundStyle(Palette.accent)
+                            HStack(spacing: 3) {
+                                Image(systemName: "clock")
+                                Text(Scheduler.timeOnly(step.time))
+                            }
+                            .font(.rounded(13, weight: .medium))
+                            .foregroundStyle(Palette.accent)
                         }
                         Text(step.detail)
                             .font(.rounded(12))
@@ -155,9 +163,22 @@ struct TimelineView: View {
                     .contentShape(Rectangle())
                     .onTapGesture { onToggleDone(idx) }
                     .padding(.bottom, isLast ? 0 : 14)
+                    }
                 }
             }
         }
+    }
+
+    /// A day boundary in the timeline (e.g. when steps roll over to Tomorrow).
+    private func dayDivider(_ date: Date) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "calendar")
+            Text(Scheduler.dayLabel(date, now: now))
+            Rectangle().fill(Palette.textSoft.opacity(0.25)).frame(height: 1)
+        }
+        .font(.rounded(12, weight: .bold))
+        .foregroundStyle(Palette.accent)
+        .padding(.vertical, 12)
     }
 
     /// Labels a rest with where it happens, and whether it spans the night.
