@@ -163,8 +163,8 @@ struct TimelineView: View {
                     }
                     .opacity(done ? 0.5 : 1)
                     .contentShape(Rectangle())
-                    .onTapGesture(count: 2) { onExpand(step) }
-                    .onTapGesture { onToggleDone(idx) }
+                    .onTapGesture(count: 2) { onToggleDone(idx) }
+                    .onTapGesture { onExpand(step) }
                     .padding(.bottom, isLast ? 0 : 14)
                     }
                 }
