@@ -32,6 +32,9 @@ struct Schedule {
     let isTight: Bool
     /// The plan was auto-adjusted (warmer proof + more yeast) to fit the time.
     let autoAdjusted: Bool
+    /// A hands-on step still lands overnight (22:00–06:00) and couldn't be
+    /// nudged out — a hint to suggest a Cold Proof.
+    let nightStepsRemain: Bool
 }
 
 enum Scheduler {
@@ -220,14 +223,22 @@ enum Scheduler {
         let total = segs.reduce(0) { $0 + $1.rest }
         let start = serve.addingTimeInterval(-total * 3600)
 
+        // Sleep-aware: slide interior hands-on steps out of 22:00–06:00 by
+        // shifting time between the rests on either side (the dough just rests a
+        // little longer or shorter — total time, and the serve time, stay fixed).
+        sleepShift(&segs, start: start)
+
         // Assign times.
         var steps: [ScheduleStep] = []
         var cursor = start
+        var nightStepsRemain = false
         for seg in segs {
+            let awk = seg.active && isSleepHour(cursor)
+            if awk { nightStepsRemain = true }
             steps.append(ScheduleStep(
                 icon: seg.icon, title: seg.title, detail: seg.detail, time: cursor,
                 leadHours: seg.rest, restLocation: seg.loc,
-                isActive: seg.active, awkward: seg.active && isSleepHour(cursor),
+                isActive: seg.active, awkward: awk,
                 gotcha: gotchaFor(seg.title)))
             cursor = cursor.addingTimeInterval(seg.rest * 3600)
         }
@@ -265,8 +276,59 @@ enum Scheduler {
         return Schedule(
             serve: serve, start: start, totalHours: total, leadHours: available,
             prefermentRestHours: prefRest, yeastHours: yeastHours, yeastTemp: yeastTemp,
-            steps: steps, isTight: isTight, autoAdjusted: autoAdjusted
+            steps: steps, isTight: isTight, autoAdjusted: autoAdjusted,
+            nightStepsRemain: nightStepsRemain
         )
+    }
+
+    // MARK: Sleep-aware shifting
+
+    /// Slide interior hands-on steps out of the 22:00–06:00 window by moving
+    /// time between the rests on either side. Total time is preserved, so the
+    /// start and serve stay fixed. The first step (the start) can't be slid.
+    private static func sleepShift(_ segs: inout [Seg], start: Date) {
+        guard segs.count > 1 else { return }
+        let minRest = 0.25
+        for _ in 0..<4 {
+            var times: [Date] = []
+            var t = start
+            for s in segs { times.append(t); t = t.addingTimeInterval(s.rest * 3600) }
+            var changed = false
+            for k in 1..<segs.count where segs[k].active && isSleepHour(times[k]) {
+                guard let target = nearestWakingTarget(times[k]) else { continue }
+                var delta = target.timeIntervalSince(times[k]) / 3600     // + later, − earlier
+                let earliest = -(segs[k - 1].rest - minRest)              // most negative
+                let latest = segs[k].rest - minRest                       // most positive
+                delta = min(max(delta, earliest), latest)
+                if abs(delta) > 0.05 {
+                    segs[k - 1] = withRest(segs[k - 1], segs[k - 1].rest + delta)
+                    segs[k] = withRest(segs[k], segs[k].rest - delta)
+                    changed = true
+                }
+            }
+            if !changed { break }
+        }
+    }
+
+    private static func withRest(_ s: Seg, _ r: Double) -> Seg {
+        Seg(icon: s.icon, title: s.title, detail: s.detail, rest: max(0, r), loc: s.loc, active: s.active)
+    }
+
+    /// The nearest waking edge (06:00 morning or 21:30 evening) to a night time.
+    private static func nearestWakingTarget(_ date: Date) -> Date? {
+        let cal = Calendar.current
+        let h = cal.component(.hour, from: date)
+        guard h >= 22 || h < 6 else { return nil }
+        let day = cal.startOfDay(for: date)
+        func at(_ hours: Double, dayOffset: Int) -> Date {
+            cal.date(byAdding: .day, value: dayOffset, to: day)!
+                .addingTimeInterval(hours * 3600)
+        }
+        let candidates = [
+            at(6, dayOffset: 0), at(21.5, dayOffset: 0),
+            at(6, dayOffset: 1), at(21.5, dayOffset: -1),
+        ]
+        return candidates.min { abs($0.timeIntervalSince(date)) < abs($1.timeIntervalSince(date)) }
     }
 
     private static func divideDetail(isRound: Bool, count: Int, noun: String, cold: Bool, styleID: String = "") -> String {
@@ -319,7 +381,7 @@ enum Scheduler {
 
     private static func isSleepHour(_ date: Date) -> Bool {
         let h = Calendar.current.component(.hour, from: date)
-        return h >= 23 || h < 6
+        return h >= 22 || h < 6
     }
 
     private static func clamp(_ x: Double, _ lo: Double, _ hi: Double) -> Double {

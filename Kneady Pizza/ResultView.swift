@@ -20,6 +20,10 @@ struct ResultView: View {
     var onEditPrices: () -> Void = {}
 
     private func grams(_ g: Double) -> String { Units.weight(g, metric: metric) }
+    /// Estimated cost of one topping line, from the editable per-kg prices.
+    private func lineCost(_ line: ShoppingLine) -> String {
+        moneyString(line.grams / 1000 * PriceStore.shared.pricePerKg(PriceCategory.classify(line.name)))
+    }
     private var guidance: WeightGuidance {
         DoughCalculator.guidance(forBall: result.ballWeight, shape: result.shape)
     }
@@ -125,6 +129,10 @@ struct ResultView: View {
                         Text(grams(line.grams))
                             .font(.rounded(13, weight: .semibold))
                             .foregroundStyle(Palette.text)
+                        Text(lineCost(line))
+                            .font(.rounded(11, weight: .medium))
+                            .foregroundStyle(Palette.sage)
+                            .frame(minWidth: 40, alignment: .trailing)
                     }
                     .padding(.vertical, 4)
                 }

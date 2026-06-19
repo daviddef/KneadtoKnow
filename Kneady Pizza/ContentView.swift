@@ -1103,6 +1103,30 @@ struct ContentView: View {
                 }
             }
         }
+
+        if vm.schedule.nightStepsRemain && vm.input.ferment != .cold {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "moon.zzz.fill")
+                    Text("A hands-on step still lands overnight (10pm–6am). A Cold Proof parks the dough in the fridge so you can sleep through it.")
+                }
+                .font(.rounded(12, weight: .medium))
+                .foregroundStyle(Palette.cool)
+                .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    vm.setFermentStyle(.cold)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "snowflake")
+                        Text("Switch to a Cold Proof")
+                    }
+                    .font(.rounded(14, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(TactileButtonStyle(isProminent: true))
+            }
+        }
     }
 
     // MARK: 6 — Directions (the timeline)
