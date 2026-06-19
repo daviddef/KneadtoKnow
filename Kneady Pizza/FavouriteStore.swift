@@ -37,6 +37,28 @@ struct SavedRecipe: Codable {
     var hidePineapple: Bool? = nil
 }
 
+/// An in-progress bake: the recipe snapshot plus which steps are ticked off.
+struct ActiveBake: Codable {
+    var recipe: SavedRecipe
+    var completedSteps: [Int]
+    var totalSteps: Int
+}
+
+/// Persists the bake the user is currently cooking, so it survives app exits.
+enum BakeStore {
+    private static let key = "currentBake.v1"
+    static func save(_ bake: ActiveBake) {
+        if let data = try? JSONEncoder().encode(bake) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+    static func load() -> ActiveBake? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(ActiveBake.self, from: data)
+    }
+    static func clear() { UserDefaults.standard.removeObject(forKey: key) }
+}
+
 /// Remembers the user's "never show me pineapple again" choice.
 enum PineappleStore {
     private static let key = "hidePineapple.v1"

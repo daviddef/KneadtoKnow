@@ -35,6 +35,8 @@ struct ContentView: View {
     @State private var completedSteps: Set<Int> = []
     /// A step shown full-screen after a double-tap (for easy reading).
     @State private var expandedStep: ScheduleStep?
+    /// Confirmation before scrapping the in-progress bake.
+    @State private var confirmCancelBake = false
     /// Brief "Saved as Favourite" confirmation toast.
     @State private var showSavedToast = false
     private let jokeTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
@@ -50,6 +52,7 @@ struct ContentView: View {
             ScrollViewReader { proxy in
                 VStack(spacing: 0) {
                     header
+                    cookingBanner(proxy)
                     totalBanner(proxy)
                     recapChips(proxy)
                     ScrollView {
@@ -161,6 +164,8 @@ struct ContentView: View {
         }
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true   // no auto-lock
+            // Pick up an unfinished bake's ticked steps where we left off.
+            if let bake = vm.activeBake { completedSteps = Set(bake.completedSteps) }
             vm.refreshNow()
             vm.rescheduleNotifications()
             // Recipe proportions: open by default in advanced, closed in simple.
@@ -176,7 +181,9 @@ struct ContentView: View {
         }
         .onChange(of: vm.schedule.start) { _, _ in
             vm.rescheduleNotifications()
-            completedSteps.removeAll()   // a new plan resets the done-ticks
+            // A new plan resets the done-ticks — but never mid-bake, where a
+            // shifting start time would otherwise wipe the cook's progress.
+            if vm.activeBake == nil { completedSteps.removeAll() }
         }
         .onChange(of: vm.input.keepItSimple) { _, simple in
             if simple {
@@ -216,6 +223,72 @@ struct ContentView: View {
                           items: vm.stepItems(for: step),
                           metric: vm.metric,
                           now: vm.now)
+        }
+        .confirmationDialog("Cancel this bake?", isPresented: $confirmCancelBake, titleVisibility: .visible) {
+            Button("Cancel bake", role: .destructive) {
+                completedSteps.removeAll()
+                vm.cancelBake()
+            }
+            Button("Keep cooking", role: .cancel) { }
+        } message: {
+            Text("This clears your progress and goes back to your favourite.")
+        }
+    }
+
+    // MARK: Currently-cooking banner
+
+    /// A sticky yellow banner for an in-progress bake — tap to jump to the
+    /// directions, or cancel to scrap it and return to the favourite.
+    @ViewBuilder private func cookingBanner(_ proxy: ScrollViewProxy) -> some View {
+        if let bake = vm.activeBake {
+            let done = min(completedSteps.count, bake.totalSteps)
+            HStack(spacing: 10) {
+                Button {
+                    Haptics.tap()
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                        proxy.scrollTo("directions", anchor: .top)
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "flame.fill")
+                            .font(.rounded(18, weight: .bold))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("CURRENTLY COOKING")
+                                .font(.rounded(11, weight: .bold))
+                                .foregroundStyle(.black.opacity(0.55))
+                            Text("\(vm.input.style.name) · \(done) of \(bake.totalSteps) steps done")
+                                .font(.rounded(14, weight: .bold))
+                                .foregroundStyle(.black.opacity(0.85))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        Spacer()
+                    }
+                    .foregroundStyle(.black.opacity(0.85))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    Haptics.tap()
+                    confirmCancelBake = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.rounded(22, weight: .medium))
+                        .foregroundStyle(.black.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Palette.amber)
+            )
+            .shadow(color: Palette.shadowDark, radius: 8, x: 0, y: 4)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 8)
+            .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
 
@@ -540,20 +613,24 @@ struct ContentView: View {
                 Text(vm.input.style.originFlag)
                     .font(.system(size: 18))
                 Text(vm.input.style.name)
-                    .font(.rounded(18, weight: .semibold))
-                    .foregroundStyle(Palette.text)
+                    .font(.rounded(18, weight: .bold))
+                    .foregroundStyle(.black.opacity(0.85))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 shapeBadge(vm.input.style.shape, isOn: false)
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.rounded(13, weight: .semibold))
-                    .foregroundStyle(Palette.accent)
+                    .font(.rounded(13, weight: .bold))
+                    .foregroundStyle(.black.opacity(0.6))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity)
-            .softWell(cornerRadius: 16)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Palette.amber)
+            )
+            .shadow(color: Palette.shadowDark, radius: 6, x: 0, y: 3)
         }
         .buttonStyle(.plain)
     }
@@ -1171,6 +1248,7 @@ struct ContentView: View {
                 for j in 0...i { completedSteps.insert(j) }          // mark i and everything above
             }
         }
+        vm.recordBakeProgress(completed: completedSteps, totalSteps: vm.schedule.steps.count)
     }
 
     /// A step's info sheet — leads with *what the thing is* (poolish, autolyse,

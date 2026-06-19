@@ -20,6 +20,8 @@ final class DoughViewModel: ObservableObject {
     @Published var hidePineapple: Bool = PineappleStore.hidden {
         didSet { PineappleStore.hidden = hidePineapple }
     }
+    /// The bake currently in progress (some steps ticked, not all). Persisted.
+    @Published var activeBake: ActiveBake?
 
     /// Recipes for a style, with pineapple filtered out when the user opted out.
     func availableRecipes(for styleID: String) -> [PizzaRecipe] {
@@ -89,6 +91,16 @@ final class DoughViewModel: ObservableObject {
             applySimpleProofDefault()   // simple mode starts as a Quick, 12 h plan
         } else {
             resetServeToEarliest()
+        }
+
+        // An unfinished bake takes over so the timeline picks up where it left
+        // off — keep its original, anchored serve time (don't reset to earliest).
+        if let bake = BakeStore.load() {
+            activeBake = bake
+            input = DoughInput.from(bake.recipe)
+            pizzaSelection = bake.recipe.pizzaSelection ?? [:]
+            extras = Set(bake.recipe.extras ?? [])
+            hidePineapple = bake.recipe.hidePineapple ?? hidePineapple
         }
 
         // Autosave: when on, mirror every change into the favourite (debounced).
@@ -336,14 +348,51 @@ final class DoughViewModel: ObservableObject {
         return Date(timeIntervalSinceReferenceDate: t)
     }
 
-    func saveFavourite(silent: Bool = false) {
+    /// A full snapshot of the current setup (recipe + picks + extras + prefs).
+    private func currentSavedRecipe() -> SavedRecipe {
         var rec = input.saved
         rec.pizzaSelection = pizzaSelection
         rec.extras = Array(extras)
         rec.hidePineapple = hidePineapple
-        FavouriteStore.save(rec)
+        return rec
+    }
+
+    func saveFavourite(silent: Bool = false) {
+        FavouriteStore.save(currentSavedRecipe())
         hasFavourite = true
         if !silent { Haptics.success() }
+    }
+
+    /// Remembers the current bake while it's underway. Called whenever the user
+    /// ticks a step. Once every step is done (or none are) there's nothing to
+    /// keep, so the active bake is cleared.
+    func recordBakeProgress(completed: Set<Int>, totalSteps: Int) {
+        guard !completed.isEmpty, completed.count < totalSteps else {
+            if activeBake != nil { BakeStore.clear(); activeBake = nil }
+            return
+        }
+        let bake = ActiveBake(recipe: currentSavedRecipe(),
+                              completedSteps: Array(completed).sorted(),
+                              totalSteps: totalSteps)
+        BakeStore.save(bake)
+        activeBake = bake
+    }
+
+    /// Cancel the in-progress bake and fall back to the favourite (or defaults).
+    func cancelBake() {
+        BakeStore.clear()
+        activeBake = nil
+        if FavouriteStore.load() != nil {
+            applyFavourite()
+        } else {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                input.applyDefaults(of: Self.defaultStyle(for: experienceLevel))
+                pizzaSelection = [:]
+                extras = []
+            }
+            resetServeToEarliest()
+        }
+        Haptics.tap()
     }
 
     /// The style whose difficulty best matches a level (ties keep list order).
