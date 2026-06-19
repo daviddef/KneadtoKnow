@@ -33,6 +33,8 @@ struct ContentView: View {
     @State private var jokeTicks = 0
     /// Indices of cooking-direction steps marked done (faded + struck through).
     @State private var completedSteps: Set<Int> = []
+    /// A step shown full-screen after a double-tap (for easy reading).
+    @State private var expandedStep: ScheduleStep?
     /// Brief "Saved as Favourite" confirmation toast.
     @State private var showSavedToast = false
     private let jokeTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
@@ -208,6 +210,12 @@ struct ContentView: View {
         }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView(vm: vm, onDone: { showOnboarding = false })
+        }
+        .sheet(item: $expandedStep) { step in
+            StepFocusView(step: step,
+                          items: vm.stepItems(for: step),
+                          metric: vm.metric,
+                          now: vm.now)
         }
     }
 
@@ -1148,7 +1156,8 @@ struct ContentView: View {
                      toppingAdvice: vm.toppingAdvice,
                      metric: vm.metric,
                      completed: completedSteps,
-                     onToggleDone: { toggleStepDone($0) })
+                     onToggleDone: { toggleStepDone($0) },
+                     onExpand: { expandedStep = $0 })
     }
 
     /// Tap a step to mark it (and the steps before it) done; tap again to

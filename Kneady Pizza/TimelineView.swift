@@ -12,6 +12,8 @@ struct TimelineView: View {
     /// Step indices marked done (faded + struck through).
     var completed: Set<Int> = []
     var onToggleDone: (Int) -> Void = { _ in }
+    /// Double-tap a step to read it full-screen.
+    var onExpand: (ScheduleStep) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -161,6 +163,7 @@ struct TimelineView: View {
                     }
                     .opacity(done ? 0.5 : 1)
                     .contentShape(Rectangle())
+                    .onTapGesture(count: 2) { onExpand(step) }
                     .onTapGesture { onToggleDone(idx) }
                     .padding(.bottom, isLast ? 0 : 14)
                     }

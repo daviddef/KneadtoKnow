@@ -98,7 +98,9 @@ struct RecipePlannerView: View {
                         .foregroundStyle(count > 0 ? Palette.accent : Palette.textSoft)
                         .frame(minWidth: 22)
                         .contentTransition(.numericText())
-                    circle("plus") { vm.setRecipeCount(recipe.id, count + 1) }
+                    circle("plus", disabled: vm.selectedPizzaTotal >= total) {
+                        vm.setRecipeCount(recipe.id, count + 1)
+                    }
                 }
             }
             if showHidePineapple {
@@ -122,13 +124,15 @@ struct RecipePlannerView: View {
         .softCard(cornerRadius: 18)
     }
 
-    private func circle(_ symbol: String, action: @escaping () -> Void) -> some View {
+    private func circle(_ symbol: String, disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.rounded(14, weight: .bold))
                 .frame(width: 36, height: 36)
         }
         .buttonStyle(TactileButtonStyle(cornerRadius: 18))
+        .disabled(disabled)
+        .opacity(disabled ? 0.35 : 1)
     }
 
     // MARK: Extras
