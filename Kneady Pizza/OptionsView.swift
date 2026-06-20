@@ -149,6 +149,8 @@ struct GuidesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                link(icon: "hand.wave.fill", title: "Tips & tricks",
+                     subtitle: "A quick tour of handy gestures — tap, double-tap and more.") { WalkthroughView() }
                 link(icon: "book.closed.fill", title: "How it works & the maths",
                      subtitle: "The thinking behind every number, plus more about ingredients.") { HowItWorksView() }
                 link(icon: "wrench.and.screwdriver.fill", title: "Tools & equipment",

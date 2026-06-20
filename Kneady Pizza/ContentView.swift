@@ -1,6 +1,15 @@
 import SwiftUI
 import Combine
 
+/// Reports each tracked section's top offset within the scroll view, so we can
+/// tell which one the baker is looking at and fire a relevant feature nudge.
+struct SectionOffsetKey: PreferenceKey {
+    static var defaultValue: [String: CGFloat] = [:]
+    static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
+        value.merge(nextValue()) { _, new in new }
+    }
+}
+
 enum ActiveSheet: Identifiable {
     case planner, stylePicker, info(InfoTopic), selectionTips, prices
     var id: String {
@@ -25,11 +34,21 @@ struct ContentView: View {
     @State private var collapsed: Set<String> = ["proportions"]
     /// First-run setup, shown until completed.
     @State private var showOnboarding = !OnboardingStore.completed
+    /// The one-time feature walkthrough (also re-openable from Guides).
+    @State private var showWalkthrough = false
     /// The occasional floating popup — a coaching tip or a pizza joke.
     @State private var showJoke = false
     @State private var jokeText = ""
     @State private var popupIsTip = false
+    /// A feature nudge (vs a tip/joke) — drawn in its own colour.
+    @State private var popupIsFeature = false
     @State private var popupEmoji = "💡"
+    /// The section nearest the top of the scroll, for contextual feature nudges.
+    @State private var currentSection = ""
+    /// Feature nudges already shown this session (each fires once).
+    @State private var shownFeatureTips: Set<String> = []
+    /// Hold off contextual nudges until the screen has settled after launch.
+    @State private var nudgesReady = false
     @State private var jokeTicks = 0
     /// Indices of cooking-direction steps marked done (faded + struck through).
     @State private var completedSteps: Set<Int> = []
@@ -60,6 +79,7 @@ struct ContentView: View {
                             if vm.input.keepItSimple {
                                 simpleSetupCard
                                     .id("sec-setup")
+                                    .background(sectionTracker("setup"))
                                 StyleHeroImage(style: vm.input.style)
                                     .id("heroImage")
                                 ResultView(result: vm.result, metric: vm.metric,
@@ -74,11 +94,14 @@ struct ContentView: View {
                                            currencyCode: Locale.current.currency?.identifier ?? "USD",
                                            onEditPrices: { activeSheet = .prices })
                                     .id("summary")
+                                    .background(sectionTracker("summary"))
                                 simpleDirectionsCard
                                     .id("directions")
+                                    .background(sectionTracker("directions"))
                             } else {
                                 styleSection
                                     .id("sec-style")
+                                    .background(sectionTracker("setup"))
                                 sizeSection
                                     .id("sec-size")
                                 scheduleSection
@@ -101,8 +124,10 @@ struct ContentView: View {
                                            currencyCode: Locale.current.currency?.identifier ?? "USD",
                                            onEditPrices: { activeSheet = .prices })
                                     .id("summary")
+                                    .background(sectionTracker("summary"))
                                 directionsSection
                                     .id("directions")
+                                    .background(sectionTracker("directions"))
                             }
 
                             footnote
@@ -110,6 +135,10 @@ struct ContentView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 6)
                         .padding(.bottom, 40)
+                    }
+                    .coordinateSpace(name: "kpScroll")
+                    .onPreferenceChange(SectionOffsetKey.self) { offsets in
+                        updateCurrentSection(offsets)
                     }
                 }
             }
@@ -151,9 +180,11 @@ struct ContentView: View {
                     popupEmoji = "💡"
                 }
                 popupIsTip = true
+                popupIsFeature = false
             } else {
                 jokeText = Jokes.randomGeneral()
                 popupIsTip = false
+                popupIsFeature = false
                 popupEmoji = "🍕"
             }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { showJoke = true }
@@ -166,6 +197,13 @@ struct ContentView: View {
             UIApplication.shared.isIdleTimerDisabled = true   // no auto-lock
             // Pick up an unfinished bake's ticked steps where we left off.
             if let bake = vm.activeBake { completedSteps = Set(bake.completedSteps) }
+            maybeShowWalkthrough()   // returning users meet the new tips once
+            // Arm contextual nudges only after things settle, so they don't fire
+            // on the initial layout or clash with the walkthrough.
+            Task {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                nudgesReady = true
+            }
             vm.refreshNow()
             vm.rescheduleNotifications()
             // Recipe proportions: open by default in advanced, closed in simple.
@@ -178,6 +216,9 @@ struct ContentView: View {
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
+        }
+        .onChange(of: currentSection) { _, section in
+            showFeatureNudge(section)
         }
         .onChange(of: vm.schedule.start) { _, _ in
             vm.rescheduleNotifications()
@@ -216,7 +257,10 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView(vm: vm, onDone: { showOnboarding = false })
+            OnboardingView(vm: vm, onDone: { showOnboarding = false; maybeShowWalkthrough() })
+        }
+        .sheet(isPresented: $showWalkthrough) {
+            WalkthroughView()
         }
         .sheet(item: $expandedStep) { step in
             StepFocusView(step: step,
@@ -296,6 +340,55 @@ struct ContentView: View {
     }
 
     private func showInfo(_ topic: InfoTopic) { activeSheet = .info(topic) }
+
+    /// A clear-rectangle that reports a section's top offset within the scroll.
+    private func sectionTracker(_ id: String) -> some View {
+        GeometryReader { geo in
+            Color.clear.preference(key: SectionOffsetKey.self,
+                                   value: [id: geo.frame(in: .named("kpScroll")).minY])
+        }
+    }
+
+    /// The section nearest the top of the viewport becomes the "current" one.
+    private func updateCurrentSection(_ offsets: [String: CGFloat]) {
+        let line: CGFloat = 140   // a little below the very top
+        let reached = offsets.filter { $0.value <= line }
+        let pick = reached.max(by: { $0.value < $1.value })?.key
+                ?? offsets.min(by: { $0.value < $1.value })?.key
+        if let pick, pick != currentSection { currentSection = pick }
+    }
+
+    /// Pop a contextual "did you know?" nudge for the section just reached —
+    /// each fires at most once per session, and only when nothing else is up.
+    private func showFeatureNudge(_ section: String) {
+        guard nudgesReady, vm.input.tipsEnabled,
+              !showJoke, !menuOpen, activeSheet == nil,
+              !showWalkthrough, !showOnboarding, !section.isEmpty,
+              let tip = FeatureTips.contextual(for: section, excluding: shownFeatureTips)
+        else { return }
+        shownFeatureTips.insert(tip.id)
+        jokeText = "Did you know? " + (tip.nudge ?? tip.blurb)
+        popupEmoji = "👉"
+        popupIsTip = true
+        popupIsFeature = true
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { showJoke = true }
+        Task {
+            try? await Task.sleep(nanoseconds: 14_000_000_000)   // longer — more to read, and you can tap to dismiss
+            withAnimation(.easeInOut) { showJoke = false }
+        }
+    }
+
+    /// Show the feature walkthrough once, after onboarding — a gentle intro to
+    /// the gestures and shortcuts. Re-openable any time from Guides & Info.
+    private func maybeShowWalkthrough() {
+        guard OnboardingStore.completed, !showOnboarding,
+              !WalkthroughStore.seen, !showWalkthrough, activeSheet == nil else { return }
+        WalkthroughStore.seen = true
+        Task {
+            try? await Task.sleep(nanoseconds: 600_000_000)   // let the screen settle first
+            showWalkthrough = true
+        }
+    }
 
     /// A brief confirmation that flashes when the favourite is saved/updated.
     @ViewBuilder private var savedToast: some View {
@@ -398,7 +491,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .fill(Palette.accentFill)
+                            .fill(popupIsFeature ? AnyShapeStyle(Palette.cool) : AnyShapeStyle(Palette.accentFill))
                     )
                     .shadow(color: Palette.shadowDark, radius: 14, x: 0, y: 7)
                 }

@@ -144,18 +144,26 @@ struct ResultView: View {
                     .font(.rounded(12))
                     .foregroundStyle(Palette.textSoft)
                     .fixedSize(horizontal: false, vertical: true)
-                Button { onPlan() } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "basket.fill")
-                        Text("Open the Pizza & topping planner")
-                    }
-                    .font(.rounded(15, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                }
-                .buttonStyle(TactileButtonStyle(isProminent: true))
             }
+            planButton
         }
+    }
+
+    /// The prominent planner button — kept around even after pizzas are chosen,
+    /// since it's the handy way back into the pizza & shopping planner.
+    private var planButton: some View {
+        let chosen = hasSelection || !extras.isEmpty
+        return Button { onPlan() } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "basket.fill")
+                Text(chosen ? "Edit pizzas & shopping list" : "Open the Pizza & topping planner")
+            }
+            .font(.rounded(15, weight: .semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+        }
+        .buttonStyle(TactileButtonStyle(isProminent: true))
+        .padding(.top, chosen ? 6 : 0)
     }
 
     @ViewBuilder
