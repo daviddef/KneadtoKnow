@@ -224,29 +224,32 @@ struct ContentView: View {
                           metric: vm.metric,
                           now: vm.now)
         }
-        .confirmationDialog("Cancel this bake?", isPresented: $confirmCancelBake, titleVisibility: .visible) {
-            Button("Cancel bake", role: .destructive) {
+        .confirmationDialog("Finished cooking?", isPresented: $confirmCancelBake, titleVisibility: .visible) {
+            Button("Yes, all done") {
                 completedSteps.removeAll()
                 vm.cancelBake()
             }
-            Button("Keep cooking", role: .cancel) { }
+            Button("Not yet — keep cooking", role: .cancel) { }
         } message: {
-            Text("This clears your progress and goes back to your favourite.")
+            Text("This clears the current bake and goes back to your favourite.")
         }
     }
 
     // MARK: Currently-cooking banner
 
-    /// A sticky yellow banner for an in-progress bake — tap to jump to the
-    /// directions, or cancel to scrap it and return to the favourite.
+    /// A sticky yellow banner for an in-progress bake — tap to jump to the step
+    /// you're on, or cancel to scrap it and return to the favourite.
     @ViewBuilder private func cookingBanner(_ proxy: ScrollViewProxy) -> some View {
         if let bake = vm.activeBake {
             let done = min(completedSteps.count, bake.totalSteps)
             HStack(spacing: 10) {
                 Button {
                     Haptics.tap()
+                    // Jump to the first step not yet ticked off — the one you're on.
+                    let current = min(completedSteps.count, max(bake.totalSteps - 1, 0))
+                    collapsed.remove("directions")   // make sure it's open in advanced mode
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                        proxy.scrollTo("directions", anchor: .top)
+                        proxy.scrollTo("step-\(current)", anchor: .top)
                     }
                 } label: {
                     HStack(spacing: 10) {

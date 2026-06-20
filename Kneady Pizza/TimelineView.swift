@@ -168,6 +168,7 @@ struct TimelineView: View {
                     .padding(.bottom, isLast ? 0 : 14)
                     }
                 }
+                .id("step-\(idx)")
             }
         }
     }
