@@ -157,6 +157,7 @@ Answer the questionnaire:
 8. Set **Pricing and Availability** (section 4).
 9. **App Review Information** (section 5).
 10. **Version Release:** "Automatically release after approval" (or manual).
+10. **Version Release:** "Automatically release after approval" (or manual).
 11. Click **Add for Review → Submit**.
 
 Then it goes to "Waiting for Review" → "In Review" → "Pending Developer Release"/"Ready for Sale". First reviews are usually 24–48 h.

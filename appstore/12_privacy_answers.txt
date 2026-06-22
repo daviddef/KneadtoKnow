@@ -1,0 +1,16 @@
+APP PRIVACY QUESTIONNAIRE — answers
+
+Do you or your third-party partners collect data from this app?  ->  YES
+(Only because the user's coordinate is sent to the Open-Meteo weather API.)
+
+Data type to add:  Location -> Precise Location
+  - How is it used?            App Functionality
+  - Linked to the user's identity?   No
+  - Used for tracking?         No
+
+No other data types are collected (no contact info, identifiers,
+usage data, diagnostics, purchases, etc.). The app has no accounts,
+no ads, and no analytics/tracking SDKs.
+
+Note you can add for clarity: "Location is optional — users can set
+the kitchen temperature by hand instead."
