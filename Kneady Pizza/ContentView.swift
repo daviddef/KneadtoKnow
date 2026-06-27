@@ -10,6 +10,9 @@ struct SectionOffsetKey: PreferenceKey {
     }
 }
 
+/// Identifies which step the full-screen reader opens on (by index).
+struct FocusedStep: Identifiable { let id: Int }
+
 enum ActiveSheet: Identifiable {
     case planner, stylePicker, info(InfoTopic), selectionTips, prices
     var id: String {
@@ -52,8 +55,8 @@ struct ContentView: View {
     @State private var jokeTicks = 0
     /// Indices of cooking-direction steps marked done (faded + struck through).
     @State private var completedSteps: Set<Int> = []
-    /// A step shown full-screen after a double-tap (for easy reading).
-    @State private var expandedStep: ScheduleStep?
+    /// A step shown full-screen after a tap (swipe between steps from there).
+    @State private var focusedStep: FocusedStep?
     /// Confirmation before scrapping the in-progress bake.
     @State private var confirmCancelBake = false
     /// Brief "Saved as Favourite" confirmation toast.
@@ -66,7 +69,9 @@ struct ContentView: View {
     private let clockTimer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        if vSize == .compact {
+        if vm.kidMode {
+            KidModeView(vm: vm)
+        } else if vSize == .compact {
             LandscapeStepsView(vm: vm,
                                completed: $completedSteps,
                                onToggle: { toggleStepDone($0) })
@@ -274,9 +279,10 @@ struct ContentView: View {
         .sheet(isPresented: $showWalkthrough) {
             WalkthroughView()
         }
-        .sheet(item: $expandedStep) { step in
-            StepFocusView(step: step,
-                          items: vm.stepItems(for: step),
+        .sheet(item: $focusedStep) { focus in
+            StepFocusView(steps: vm.schedule.steps,
+                          startIndex: focus.id,
+                          itemsFor: { vm.stepItems(for: $0) },
                           metric: vm.metric,
                           now: vm.now)
         }
@@ -713,34 +719,44 @@ struct ContentView: View {
 
     /// The style picker button alone (no blurb).
     @ViewBuilder private var styleDropdownButton: some View {
-        Button {
-            activeSheet = .stylePicker
-            Haptics.tap()
-        } label: {
-            HStack(spacing: 10) {
-                Text(vm.input.style.originFlag)
-                    .font(.system(size: 18))
-                Text(vm.input.style.name)
-                    .font(.rounded(18, weight: .bold))
-                    .foregroundStyle(.black.opacity(0.85))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                shapeBadge(vm.input.style.shape, isOn: false)
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.rounded(13, weight: .bold))
-                    .foregroundStyle(.black.opacity(0.6))
+        // While a bake is underway the picker is locked, so you can't wander off
+        // and change pizza mid-cook — it just shows what you're making.
+        if vm.activeBake == nil {
+            Button {
+                activeSheet = .stylePicker
+                Haptics.tap()
+            } label: {
+                styleDropdownLabel(locked: false)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Palette.amber)
-            )
-            .shadow(color: Palette.shadowDark, radius: 6, x: 0, y: 3)
+            .buttonStyle(.plain)
+        } else {
+            styleDropdownLabel(locked: true)
         }
-        .buttonStyle(.plain)
+    }
+
+    private func styleDropdownLabel(locked: Bool) -> some View {
+        HStack(spacing: 10) {
+            Text(vm.input.style.originFlag)
+                .font(.system(size: 18))
+            Text(vm.input.style.name)
+                .font(.rounded(18, weight: .bold))
+                .foregroundStyle(.black.opacity(0.85))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            shapeBadge(vm.input.style.shape, isOn: false)
+            Spacer(minLength: 8)
+            Image(systemName: locked ? "lock.fill" : "chevron.up.chevron.down")
+                .font(.rounded(13, weight: .bold))
+                .foregroundStyle(.black.opacity(0.6))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Palette.amber)
+        )
+        .shadow(color: Palette.shadowDark, radius: 6, x: 0, y: 3)
     }
 
     /// The style picker button and its one-line blurb (used in full mode).
@@ -1344,7 +1360,7 @@ struct ContentView: View {
                          metric: vm.metric,
                          completed: completedSteps,
                          onToggleDone: { toggleStepDone($0) },
-                         onExpand: { expandedStep = $0 })
+                         onExpand: { focusedStep = FocusedStep(id: $0) })
         }
     }
 

@@ -22,6 +22,10 @@ final class DoughViewModel: ObservableObject {
     }
     /// The bake currently in progress (some steps ticked, not all). Persisted.
     @Published var activeBake: ActiveBake?
+    /// Kid Mode — a big, fun, simplified pizza flow for children.
+    @Published var kidMode: Bool = KidModeStore.enabled {
+        didSet { KidModeStore.enabled = kidMode }
+    }
 
     /// Recipes for a style, with pineapple filtered out when the user opted out.
     func availableRecipes(for styleID: String) -> [PizzaRecipe] {
@@ -256,9 +260,14 @@ final class DoughViewModel: ObservableObject {
         }
     }
 
-    /// Re-schedules reminders to match the live plan (no-op when off).
+    /// Re-schedules reminders to match the live plan. Reminders only fire for a
+    /// bake that's actually underway — otherwise any pending ones are cleared,
+    /// so you're never pinged for a plan you're just browsing.
     func rescheduleNotifications() {
-        guard notificationsEnabled else { return }
+        guard notificationsEnabled, activeBake != nil else {
+            NotificationManager.cancelAll()
+            return
+        }
         NotificationManager.reschedule(steps: schedule.steps, now: now)
     }
 
@@ -376,6 +385,7 @@ final class DoughViewModel: ObservableObject {
                               anchorDate: now)
         BakeStore.save(bake)
         activeBake = bake
+        rescheduleNotifications()   // reminders start now that a bake is underway
         Haptics.success()
     }
 
@@ -386,22 +396,26 @@ final class DoughViewModel: ObservableObject {
         // Finished — every step ticked, so there's nothing left to cook.
         if !completed.isEmpty, completed.count >= totalSteps {
             BakeStore.clear(); activeBake = nil
+            rescheduleNotifications()   // clears any pending reminders
             return
         }
         // Only record once a bake exists (via Go) or the first step is ticked.
         guard activeBake != nil || !completed.isEmpty else { return }
+        let wasActive = activeBake != nil
         let bake = ActiveBake(recipe: currentSavedRecipe(),
                               completedSteps: Array(completed).sorted(),
                               totalSteps: totalSteps,
                               anchorDate: activeBake?.anchorDate ?? now)
         BakeStore.save(bake)
         activeBake = bake
+        if !wasActive { rescheduleNotifications() }   // first tick auto-started a bake
     }
 
     /// Cancel the in-progress bake and fall back to the favourite (or defaults).
     func cancelBake() {
         BakeStore.clear()
         activeBake = nil
+        rescheduleNotifications()   // stop reminders for the cancelled bake
         if FavouriteStore.load() != nil {
             applyFavourite()
         } else {

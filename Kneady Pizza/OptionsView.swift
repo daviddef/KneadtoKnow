@@ -10,17 +10,33 @@ struct MenuDrawer: View {
     var onClose: () -> Void
     var onReintro: () -> Void = {}
 
+    /// The single source of truth for the experience mode.
+    private var modeBinding: Binding<AppMode> {
+        Binding(
+            get: { vm.kidMode ? .kid : (vm.input.keepItSimple ? .simple : .classic) },
+            set: { m in
+                switch m {
+                case .simple:  vm.kidMode = false; vm.input.keepItSimple = true
+                case .classic: vm.kidMode = false; vm.input.keepItSimple = false
+                case .kid:     vm.kidMode = true
+                }
+            })
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    // Mode switch, kept prominent at the top of the menu.
-                    VStack(alignment: .leading, spacing: 8) {
-                        TactileToggle(
-                            title: "Keep it simple",
-                            subtitle: "Let the pizza style set the ball size, yeast and proportions, and hide the detailed recipe. Turn off for full control.",
-                            isOn: $vm.input.keepItSimple
-                        )
+                    // The experience mode — the one place to switch, up top.
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("MODE")
+                            .font(.rounded(12, weight: .bold))
+                            .foregroundStyle(Palette.textSoft)
+                        TactileSegmented(options: AppMode.allCases, selection: modeBinding) { $0.label }
+                        Text("Keep it simple sets things up for you · Classic gives full control · Kid is a big, fun pizza game for children.")
+                            .font(.rounded(11))
+                            .foregroundStyle(Palette.textSoft)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(18)
                     .softCard()
@@ -190,6 +206,19 @@ struct GuidesView: View {
 // MARK: - Settings
 
 /// Units, oven, reminders, pop-ups and first-time setup.
+/// The three experience modes offered in Settings.
+enum AppMode: String, CaseIterable, Identifiable {
+    case simple, classic, kid
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .simple:  return "Keep it simple"
+        case .classic: return "Classic"
+        case .kid:     return "🧒 Kid"
+        }
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
