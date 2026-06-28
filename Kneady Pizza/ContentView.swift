@@ -244,6 +244,7 @@ struct ContentView: View {
             if vm.activeBake == nil { completedSteps.removeAll() }
         }
         .onChange(of: vm.input.keepItSimple) { _, simple in
+            SimpleModeStore.enabled = simple   // remember the mode across launches
             if simple {
                 // The style takes over sizing, and the default plan becomes
                 // a Quick proof ready in 12 hours. Simple mode also adopts the

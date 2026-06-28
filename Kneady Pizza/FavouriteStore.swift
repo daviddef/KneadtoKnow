@@ -71,6 +71,16 @@ enum PineappleStore {
     }
 }
 
+/// Remembers the chosen experience mode (Simple vs Classic) on its own, so it
+/// persists across launches even without a saved favourite. Defaults to Simple.
+enum SimpleModeStore {
+    private static let key = "keepItSimple.v1"
+    static var enabled: Bool {
+        get { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: key) }
+    }
+}
+
 /// Remembers whether the favourite should update itself automatically.
 enum AutosaveStore {
     private static let key = "autosaveFavourite.v1"

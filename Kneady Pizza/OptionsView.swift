@@ -16,8 +16,8 @@ struct MenuDrawer: View {
             get: { vm.kidMode ? .kid : (vm.input.keepItSimple ? .simple : .classic) },
             set: { m in
                 switch m {
-                case .simple:  vm.kidMode = false; vm.input.keepItSimple = true
-                case .classic: vm.kidMode = false; vm.input.keepItSimple = false
+                case .simple:  vm.kidMode = false; vm.input.keepItSimple = true;  SimpleModeStore.enabled = true
+                case .classic: vm.kidMode = false; vm.input.keepItSimple = false; SimpleModeStore.enabled = false
                 case .kid:     vm.kidMode = true
                 }
             })

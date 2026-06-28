@@ -69,6 +69,19 @@ struct StepFocusView: View {
                 .foregroundStyle(Palette.text)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if step.leadHours > 0 {
+                HStack(spacing: 9) {
+                    Image(systemName: "clock.fill")
+                    Text(leadLabel(step))
+                }
+                .font(.rounded(18, weight: .bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 18).padding(.vertical, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(locationColor(step.restLocation)))
+                .fixedSize(horizontal: false, vertical: true)
+            }
+
             Text(step.detail)
                 .font(.rounded(22, weight: .medium))
                 .foregroundStyle(Palette.text)
@@ -107,5 +120,38 @@ struct StepFocusView: View {
             Spacer(minLength: 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The rest after this step — duration, where it happens, and overnight note.
+    private func leadLabel(_ step: ScheduleStep) -> String {
+        var label = "\(Scheduler.duration(step.leadHours)) \(step.restLocation.phrase)"
+        if spansNight(from: step.time, hours: step.leadHours) {
+            label += " · overnight (you sleep)"
+        }
+        return label
+    }
+
+    private func locationColor(_ loc: StepLocation) -> Color {
+        switch loc {
+        case .room:   return Palette.sage
+        case .fridge: return Palette.cool
+        case .warm:   return Palette.warm
+        }
+    }
+
+    private func spansNight(from start: Date, hours: Double) -> Bool {
+        guard hours > 0 else { return false }
+        let cal = Calendar.current
+        let end = start.addingTimeInterval(hours * 3600)
+        var day = cal.startOfDay(for: start)
+        while day <= end {
+            if let threeAM = cal.date(byAdding: .hour, value: 3, to: day),
+               threeAM >= start, threeAM <= end {
+                return true
+            }
+            guard let next = cal.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return false
     }
 }

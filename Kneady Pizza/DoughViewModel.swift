@@ -83,6 +83,7 @@ final class DoughViewModel: ObservableObject {
 
     init() {
         favouriteExtras = CustomExtrasStore.load()
+        let savedSimple = SimpleModeStore.enabled   // the persisted Simple/Classic choice
         if let fav = FavouriteStore.load() {
             input = DoughInput.from(fav)
             pizzaSelection = fav.pizzaSelection ?? [:]
@@ -91,7 +92,7 @@ final class DoughViewModel: ObservableObject {
             hasFavourite = true
             // Saved serve time is usually stale — fall back to the earliest.
             if input.serveDate <= Date() { resetServeToEarliest() }
-        } else if input.keepItSimple {
+        } else if savedSimple {
             applySimpleProofDefault()   // simple mode starts as a Quick, 12 h plan
         } else {
             resetServeToEarliest()
@@ -106,6 +107,10 @@ final class DoughViewModel: ObservableObject {
             extras = Set(bake.recipe.extras ?? [])
             hidePineapple = bake.recipe.hidePineapple ?? hidePineapple
         }
+
+        // The Simple/Classic mode is a global preference — restore it so the
+        // choice sticks across launches (favourites no longer override it).
+        input.keepItSimple = savedSimple
 
         // Autosave: when on, mirror every change into the favourite (debounced).
         let inputChanges = $input.dropFirst().map { _ in () }
@@ -488,6 +493,7 @@ final class DoughViewModel: ObservableObject {
         if wantsReminders { notificationsEnabled = true }          // triggers the permission prompt
         if wantsLocation { Task { await fetchLocalTemperature() } } // triggers the location prompt + sets temp
 
+        SimpleModeStore.enabled = input.keepItSimple   // remember the mode
         OnboardingStore.completed = true
         if autosaveFavourite { saveFavourite(silent: true) }
         Haptics.success()
