@@ -453,6 +453,31 @@ final class DoughViewModel: ObservableObject {
 
     /// Applies the first-run choices: experience level, oven, and the
     /// permission opt-ins. Sets units from the device region.
+    /// The current experience persona, derived from the mode flags — the single
+    /// concept shared by onboarding and the menu's mode picker.
+    var currentPersona: Experience {
+        if kidMode { return .kid }
+        if input.keepItSimple { return experienceLevel == .beginner ? .villager : .pizzaiolo }
+        return .roman
+    }
+
+    /// Switch persona: the level chooses the mode (Kid / Simple / Classic).
+    func applyPersona(_ e: Experience) {
+        experienceLevel = e.color
+        switch e {
+        case .kid:
+            kidMode = true
+        case .villager, .pizzaiolo:
+            kidMode = false
+            input.keepItSimple = true
+            SimpleModeStore.enabled = true
+        case .roman:
+            kidMode = false
+            input.keepItSimple = false
+            SimpleModeStore.enabled = false
+        }
+    }
+
     func applyOnboarding(level: Experience, oven: OvenType, wantsReminders: Bool, wantsLocation: Bool) {
         if #available(iOS 16, *) {
             input.lengthUnit = (Locale.current.measurementSystem == .us) ? .inch : .cm
@@ -466,6 +491,14 @@ final class DoughViewModel: ObservableObject {
         input.tipsEnabled = true
 
         switch level {
+        case .kid:
+            kidMode = true
+            input.keepItSimple = true
+            input.humourLevel = .lots
+            select(style: style)
+            pizzaSelection = starterSelection(for: style)
+            applySimpleProofDefault()
+            autosaveFavourite = true
         case .villager:
             input.keepItSimple = true
             input.humourLevel = .lots

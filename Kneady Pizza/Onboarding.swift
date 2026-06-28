@@ -19,18 +19,30 @@ enum ExperienceStore {
 }
 
 /// The three experience levels offered on first run.
-enum Experience: Int, CaseIterable {
-    case villager = 0, pizzaiolo, roman
+enum Experience: Int, CaseIterable, Identifiable {
+    case kid = 0, villager, pizzaiolo, roman
+    var id: Int { rawValue }
 
     var title: String {
         switch self {
+        case .kid:       return "I am a Kid"
         case .villager:  return "I am a Villager"
         case .pizzaiolo: return "I am a Sunday Pizzaiolo"
         case .roman:     return "I am a Roman Soldier"
         }
     }
+    /// Short label for the mode picker in the menu.
+    var shortLabel: String {
+        switch self {
+        case .kid:       return "🧒 Kid"
+        case .villager:  return "Villager"
+        case .pizzaiolo: return "Pizzaiolo"
+        case .roman:     return "Roman"
+        }
+    }
     var subtitle: String {
         switch self {
+        case .kid:       return "Just for fun"
         case .villager:  return "Beginner"
         case .pizzaiolo: return "Some experience"
         case .roman:     return "Advanced"
@@ -38,6 +50,7 @@ enum Experience: Int, CaseIterable {
     }
     var emoji: String {
         switch self {
+        case .kid:       return "🧒"
         case .villager:  return "🧑‍🌾"
         case .pizzaiolo: return "👨‍🍳"
         case .roman:     return "⚔️"
@@ -45,6 +58,7 @@ enum Experience: Int, CaseIterable {
     }
     var color: Complexity {
         switch self {
+        case .kid:       return .beginner
         case .villager:  return .beginner
         case .pizzaiolo: return .intermediate
         case .roman:     return .advanced
@@ -52,16 +66,23 @@ enum Experience: Int, CaseIterable {
     }
     var summary: [String] {
         switch self {
+        case .kid:
+            return [
+                "Big, fun Kid Mode",
+                "Pick or build your pizza",
+                "Simple steps & confetti",
+                "A grown-up helps with the oven",
+            ]
         case .villager:
             return [
-                "Keep-it-simple mode on",
+                "Simple mode on",
                 "Auto-saves your setup",
                 "Lots of tips & jokes",
                 "Easy starter pizzas ready",
             ]
         case .pizzaiolo:
             return [
-                "Keep-it-simple, recipe a tap away",
+                "Simple, recipe a tap away",
                 "Auto-saves your setup",
                 "A balance of tips & jokes",
                 "Starter pizzas with character",
@@ -78,42 +99,17 @@ enum Experience: Int, CaseIterable {
 }
 
 /// First-run "Get yourself ready" screen.
-/// The three looks offered during first-time setup.
-enum OnboardingLook: String, CaseIterable, Identifiable {
-    case classic, vibrant, kid
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .classic: return "Classic"
-        case .vibrant: return "Vibrant"
-        case .kid:     return "🧒 Kid"
-        }
-    }
-}
-
 struct OnboardingView: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
     var onDone: () -> Void
 
-    @State private var levelIndex: Double = 0
+    @State private var levelIndex: Double = 1   // default to Villager (Kid is first)
     @State private var oven: OvenType = .home
     @State private var wantsReminders = true
     @State private var wantsLocation = true
 
     /// Maps the look choice onto theme + Kid Mode.
-    private var lookBinding: Binding<OnboardingLook> {
-        Binding(
-            get: { vm.kidMode ? .kid : (themeManager.theme == .fun ? .vibrant : .classic) },
-            set: { l in
-                switch l {
-                case .classic: vm.kidMode = false; themeManager.theme = .classic
-                case .vibrant: vm.kidMode = false; themeManager.theme = .fun
-                case .kid:     vm.kidMode = true;  themeManager.theme = .fun
-                }
-            })
-    }
-
     private var level: Experience { Experience(rawValue: Int(levelIndex.rounded())) ?? .villager }
 
     private func levelColor(_ c: Complexity) -> Color {
@@ -156,7 +152,7 @@ struct OnboardingView: View {
                             Spacer()
                         }
 
-                        Slider(value: $levelIndex, in: 0...2, step: 1) { editing in
+                        Slider(value: $levelIndex, in: 0...3, step: 1) { editing in
                             if editing { Haptics.tap() }
                         }
                         .tint(levelColor(level.color))
@@ -194,10 +190,10 @@ struct OnboardingView: View {
                         Text("PICK YOUR LOOK")
                             .font(.rounded(11, weight: .bold))
                             .foregroundStyle(Palette.textSoft)
-                        TactileSegmented(options: OnboardingLook.allCases,
-                                         selection: lookBinding,
+                        TactileSegmented(options: AppTheme.allCases,
+                                         selection: $themeManager.theme,
                                          animateSelection: false) { $0.label }
-                        Text("Calm Classic, a bold Vibrant pizzeria, or Kid — a big, fun way for children to make pizza. Change it any time in the menu.")
+                        Text("Calm Classic flour & terracotta, or a bold Vibrant pizzeria. Change it any time in the menu.")
                             .font(.rounded(11)).foregroundStyle(Palette.textSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -259,7 +255,8 @@ struct OnboardingView: View {
         .tint(Palette.accent)
         .onAppear {
             // Seed from current settings so re-running feels continuous.
-            levelIndex = Double(vm.experienceLevel.rawValue)
+            // Experience adds Kid at 0, so it sits one ahead of Complexity.
+            levelIndex = vm.kidMode ? 0 : Double(vm.experienceLevel.rawValue + 1)
             oven = vm.input.oven
             wantsReminders = vm.notificationsEnabled
         }

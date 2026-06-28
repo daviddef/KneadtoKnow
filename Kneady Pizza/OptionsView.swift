@@ -11,29 +11,21 @@ struct MenuDrawer: View {
     var onReintro: () -> Void = {}
 
     /// The single source of truth for the experience mode.
-    private var modeBinding: Binding<AppMode> {
-        Binding(
-            get: { vm.kidMode ? .kid : (vm.input.keepItSimple ? .simple : .classic) },
-            set: { m in
-                switch m {
-                case .simple:  vm.kidMode = false; vm.input.keepItSimple = true;  SimpleModeStore.enabled = true
-                case .classic: vm.kidMode = false; vm.input.keepItSimple = false; SimpleModeStore.enabled = false
-                case .kid:     vm.kidMode = true
-                }
-            })
+    private var personaBinding: Binding<Experience> {
+        Binding(get: { vm.currentPersona }, set: { vm.applyPersona($0) })
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    // The experience mode — the one place to switch, up top.
+                    // The experience level sets the mode — the one place to switch.
                     VStack(alignment: .leading, spacing: 10) {
                         Text("MODE")
                             .font(.rounded(12, weight: .bold))
                             .foregroundStyle(Palette.textSoft)
-                        TactileSegmented(options: AppMode.allCases, selection: modeBinding) { $0.label }
-                        Text("Simple sets things up for you · Classic gives full control · Kid is a big, fun pizza game for children.")
+                        TactileSegmented(options: Experience.allCases, selection: personaBinding) { $0.shortLabel }
+                        Text("Kid is a big, fun game for children · Villager & Pizzaiolo keep it simple · Roman gives full control.")
                             .font(.rounded(11))
                             .foregroundStyle(Palette.textSoft)
                             .fixedSize(horizontal: false, vertical: true)
@@ -206,19 +198,6 @@ struct GuidesView: View {
 // MARK: - Settings
 
 /// Units, oven, reminders, pop-ups and first-time setup.
-/// The three experience modes offered in Settings.
-enum AppMode: String, CaseIterable, Identifiable {
-    case simple, classic, kid
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .simple:  return "Simple"
-        case .classic: return "Classic"
-        case .kid:     return "🧒 Kid"
-        }
-    }
-}
-
 struct SettingsView: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
