@@ -78,6 +78,19 @@ enum Experience: Int, CaseIterable {
 }
 
 /// First-run "Get yourself ready" screen.
+/// The three looks offered during first-time setup.
+enum OnboardingLook: String, CaseIterable, Identifiable {
+    case classic, vibrant, kid
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .classic: return "Classic"
+        case .vibrant: return "Vibrant"
+        case .kid:     return "🧒 Kid"
+        }
+    }
+}
+
 struct OnboardingView: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -87,6 +100,19 @@ struct OnboardingView: View {
     @State private var oven: OvenType = .home
     @State private var wantsReminders = true
     @State private var wantsLocation = true
+
+    /// Maps the look choice onto theme + Kid Mode.
+    private var lookBinding: Binding<OnboardingLook> {
+        Binding(
+            get: { vm.kidMode ? .kid : (themeManager.theme == .fun ? .vibrant : .classic) },
+            set: { l in
+                switch l {
+                case .classic: vm.kidMode = false; themeManager.theme = .classic
+                case .vibrant: vm.kidMode = false; themeManager.theme = .fun
+                case .kid:     vm.kidMode = true;  themeManager.theme = .fun
+                }
+            })
+    }
 
     private var level: Experience { Experience(rawValue: Int(levelIndex.rounded())) ?? .villager }
 
@@ -168,10 +194,10 @@ struct OnboardingView: View {
                         Text("PICK YOUR LOOK")
                             .font(.rounded(11, weight: .bold))
                             .foregroundStyle(Palette.textSoft)
-                        TactileSegmented(options: AppTheme.allCases,
-                                         selection: $themeManager.theme,
+                        TactileSegmented(options: OnboardingLook.allCases,
+                                         selection: lookBinding,
                                          animateSelection: false) { $0.label }
-                        Text("Calm flour & terracotta, or a bold tomato-and-basil pizzeria. Change it any time in Settings.")
+                        Text("Calm Classic, a bold Vibrant pizzeria, or Kid — a big, fun way for children to make pizza. Change it any time in the menu.")
                             .font(.rounded(11)).foregroundStyle(Palette.textSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
