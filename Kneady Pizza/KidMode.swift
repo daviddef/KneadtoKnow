@@ -52,20 +52,23 @@ enum KidDough: String, Codable, CaseIterable {
         switch self {
         case .rightNow:
             return [
-                .init(emoji: "🥣", name: "Flour",         kid: "2 cups",   grown: "250 g"),
-                .init(emoji: "✨", name: "Baking powder", kid: "1 spoon",  grown: "10 g"),
-                .init(emoji: "💧", name: "Warm water",    kid: "¾ cup",    grown: "180 ml"),
-                .init(emoji: "🥄", name: "Oil",           kid: "1 spoon",  grown: "15 ml"),
-                .init(emoji: "🧂", name: "Salt",          kid: "a pinch",  grown: "3 g"),
+                .init(emoji: "🥣", name: "Flour",         kid: "2 cups",   metric: "250 g",  imperial: "9 oz"),
+                .init(emoji: "✨", name: "Baking powder", kid: "1 spoon",  metric: "10 g",   imperial: "2 tsp",
+                      alt: KidAltCard(emoji: "🌾", title: "Self-raising flour",
+                                      sub: "alternative to flour & baking powder",
+                                      kid: "2 cups", metric: "250 g", imperial: "9 oz")),
+                .init(emoji: "💧", name: "Warm water",    kid: "¾ cup",    metric: "180 ml", imperial: "6 fl oz"),
+                .init(emoji: "🥄", name: "Oil",           kid: "1 spoon",  metric: "15 ml",  imperial: "1 tbsp"),
+                .init(emoji: "🧂", name: "Salt",          kid: "a pinch",  metric: "3 g",    imperial: "½ tsp"),
             ]
         case .puffy:
             return [
-                .init(emoji: "🥣", name: "Flour",       kid: "2 cups",        grown: "250 g"),
-                .init(emoji: "🫧", name: "Yeast",       kid: "½ spoon",       grown: "3 g"),
-                .init(emoji: "💧", name: "Warm water",  kid: "¾ cup",         grown: "180 ml"),
-                .init(emoji: "🥄", name: "Oil",         kid: "1 spoon",       grown: "15 ml"),
-                .init(emoji: "🍯", name: "Honey",       kid: "1 small spoon", grown: "7 g"),
-                .init(emoji: "🧂", name: "Salt",        kid: "a pinch",       grown: "3 g"),
+                .init(emoji: "🥣", name: "Flour",       kid: "2 cups",        metric: "250 g",  imperial: "9 oz"),
+                .init(emoji: "🫧", name: "Yeast",       kid: "½ spoon",       metric: "3 g",    imperial: "1 tsp"),
+                .init(emoji: "💧", name: "Warm water",  kid: "¾ cup",         metric: "180 ml", imperial: "6 fl oz"),
+                .init(emoji: "🥄", name: "Oil",         kid: "1 spoon",       metric: "15 ml",  imperial: "1 tbsp"),
+                .init(emoji: "🍯", name: "Honey",       kid: "1 small spoon", metric: "7 g",    imperial: "1 tsp"),
+                .init(emoji: "🧂", name: "Salt",        kid: "a pinch",       metric: "3 g",    imperial: "½ tsp"),
             ]
         }
     }
@@ -76,7 +79,21 @@ struct KidIngredient: Identifiable, Hashable {
     let emoji: String
     let name: String
     let kid: String
-    let grown: String
+    let metric: String
+    let imperial: String
+    var alt: KidAltCard? = nil
+    func precise(_ isMetric: Bool) -> String { isMetric ? metric : imperial }
+}
+
+/// A swap-in alternative shown as its own card under an ingredient.
+struct KidAltCard: Hashable {
+    let emoji: String
+    let title: String
+    let sub: String
+    let kid: String
+    let metric: String
+    let imperial: String
+    func precise(_ isMetric: Bool) -> String { isMetric ? metric : imperial }
 }
 
 /// A kid pizza: an ordered build of sauce, cheese and extra toppings.
@@ -87,6 +104,7 @@ struct KidPizza: Identifiable, Codable, Hashable {
     var sauce: Bool
     var cheese: Bool
     var extras: [KidTopping]
+    var blurb: String? = nil   // a short "what's on it" line for the tile
     var custom: Bool = false
 }
 
@@ -131,13 +149,13 @@ enum KidLibrary {
 
     /// The tappable picker tiles.
     static let presets: [KidPizza] = [
-        .init(id: "cheese",   name: "Just Cheese",       emoji: "🧀",   sauce: true,  cheese: true,  extras: []),
-        .init(id: "pep",      name: "Pepperoni",         emoji: "🍕",   sauce: true,  cheese: true,  extras: [pepperoni]),
-        .init(id: "hawaii",   name: "Hawaiian",          emoji: "🍍🍖", sauce: true,  cheese: true,  extras: [ham, pineapple]),
-        .init(id: "marg",     name: "Margherita",        emoji: "🍅🌿", sauce: true,  cheese: true,  extras: [basil]),
-        .init(id: "veggie",   name: "Rainbow Veggie",    emoji: "🌈🫑", sauce: true,  cheese: true,  extras: [peppers, corn]),
-        .init(id: "nutella",  name: "Nutella & Banana",  emoji: "🍫🍌", sauce: false, cheese: false, extras: [nutella, banana]),
-        .init(id: "dino",     name: "Dino Pepperoni",    emoji: "🦕",   sauce: true,  cheese: true,  extras: [pepperoni]),
+        .init(id: "cheese",   name: "Just Cheese",       emoji: "🧀",   sauce: true,  cheese: true,  extras: [],                  blurb: "gooey melty cheese"),
+        .init(id: "pep",      name: "Pepperoni",         emoji: "🍕",   sauce: true,  cheese: true,  extras: [pepperoni],         blurb: "cheese + spicy pepperoni"),
+        .init(id: "hawaii",   name: "Hawaiian",          emoji: "🍍🍖", sauce: true,  cheese: true,  extras: [ham, pineapple],    blurb: "ham + pineapple"),
+        .init(id: "marg",     name: "Margherita",        emoji: "🍅🌿", sauce: true,  cheese: true,  extras: [basil],             blurb: "cheese + basil leaves"),
+        .init(id: "veggie",   name: "Rainbow Veggie",    emoji: "🌈🫑", sauce: true,  cheese: true,  extras: [peppers, corn],     blurb: "peppers + sweetcorn"),
+        .init(id: "nutella",  name: "Nutella & Banana",  emoji: "🍫🍌", sauce: false, cheese: false, extras: [nutella, banana],   blurb: "choc + banana (sweet!)"),
+        .init(id: "dino",     name: "Dino Pepperoni",    emoji: "🦕",   sauce: true,  cheese: true,  extras: [pepperoni],         blurb: "pepperoni — RAWR! 🦖"),
     ]
 
     // Builder option groups.
@@ -157,7 +175,7 @@ enum KidRecipe {
         "Why did the tomato turn red? It saw the pizza dressing!",
     ]
 
-    static func steps(for pizza: KidPizza, dough: KidDough) -> [KidStep] {
+    static func steps(for pizza: KidPizza, dough: KidDough, metric: Bool) -> [KidStep] {
         var s: [KidStep] = []
 
         s.append(KidStep(emoji: "🥣", title: "Mix it all up!",
@@ -203,17 +221,29 @@ enum KidRecipe {
 
         s.append(KidStep(emoji: "🔥", title: "Into the oven!",
                          detail: "Ovens are super HOT — time to grab a grown-up to help!",
-                         banner: KidBanner(icon: "🔥", value: "About 10 minutes", sub: "at 220°C", warm: true),
+                         banner: KidBanner(icon: "🔥", value: "About 10 minutes",
+                                           sub: metric ? "at 220°C" : "at 425°F", warm: true),
                          grownUp: true))
 
         return s
     }
 
-    /// Build a pizza from the make-your-own selections.
+    /// Build a pizza from the make-your-own selections, with a "what's on it" blurb.
     static func custom(sauce: Bool, cheese: Bool, extras: [KidTopping]) -> KidPizza {
-        KidPizza(id: "custom-\(extras.map(\.id).joined(separator: "-"))",
-                 name: "My Pizza", emoji: "🍕",
-                 sauce: sauce, cheese: cheese, extras: extras, custom: true)
+        var parts: [String] = []
+        if cheese { parts.append("cheese") }
+        parts += extras.map { $0.name.lowercased() }
+        if parts.isEmpty { parts = [sauce ? "just sauce" : "plain dough"] }
+        let blurb = parts.joined(separator: " · ")
+
+        let name: String
+        if extras.count >= 2 { name = "\(extras[0].name) & \(extras[1].name) Pizza" }
+        else if let only = extras.first { name = "\(only.name) Pizza" }
+        else { name = cheese ? "Cheese Pizza" : "Plain Pizza" }
+
+        return KidPizza(id: "custom-\(extras.map(\.id).joined(separator: "-"))",
+                        name: name, emoji: "🍕",
+                        sauce: sauce, cheese: cheese, extras: extras, blurb: blurb, custom: true)
     }
 }
 

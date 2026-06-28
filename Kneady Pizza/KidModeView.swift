@@ -130,7 +130,7 @@ struct KidModeView: View {
 
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                     ForEach(KidLibrary.presets) { p in
-                        tile(p.emoji, p.name, bg: Kid.sunnySoft) { choose(p) }
+                        tile(p.emoji, p.name, blurb: p.blurb, bg: Kid.sunnySoft) { choose(p) }
                     }
                     Button { Haptics.tap(); resetBuilder(); withAnimation { phase = .build } } label: {
                         VStack(spacing: 4) {
@@ -148,7 +148,7 @@ struct KidModeView: View {
                     Text("⭐ My Pizzas").font(.rounded(16, weight: .bold)).foregroundStyle(Kid.ink).padding(.top, 6)
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                         ForEach(saved) { p in
-                            tile(p.emoji, p.name, bg: Kid.grapeSoft) { choose(p) }
+                            tile(p.emoji, p.name, blurb: p.blurb, bg: Kid.grapeSoft) { choose(p) }
                         }
                     }
                 }
@@ -157,14 +157,18 @@ struct KidModeView: View {
         }
     }
 
-    private func tile(_ emoji: String, _ name: String, bg: Color, action: @escaping () -> Void) -> some View {
+    private func tile(_ emoji: String, _ name: String, blurb: String? = nil, bg: Color, action: @escaping () -> Void) -> some View {
         Button(action: { Haptics.tap(); action() }) {
-            VStack(spacing: 4) {
+            VStack(spacing: 3) {
                 Text(emoji).font(.system(size: 28))
-                Text(name).font(.rounded(13, weight: .bold)).foregroundStyle(Kid.ink)
+                Text(name).font(.rounded(14, weight: .bold)).foregroundStyle(Kid.ink)
                     .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+                if let b = blurb, !b.isEmpty {
+                    Text(b).font(.rounded(11, weight: .medium)).foregroundStyle(Kid.inkSoft)
+                        .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+                }
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 14)
+            .frame(maxWidth: .infinity).padding(.vertical, 12).padding(.horizontal, 6)
             .background(RoundedRectangle(cornerRadius: 18).fill(bg))
         }
         .buttonStyle(.plain)
@@ -321,7 +325,7 @@ struct KidModeView: View {
     private func startCooking(_ d: KidDough) {
         guard let pizza else { return }
         dough = d
-        steps = KidRecipe.steps(for: pizza, dough: d)
+        steps = KidRecipe.steps(for: pizza, dough: d, metric: vm.metric)
         stepPage = 0
         withAnimation { phase = .cook }
     }
@@ -370,23 +374,41 @@ struct KidModeView: View {
                 .multilineTextAlignment(.center).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
 
             if !step.ingredients.isEmpty {
+                let darkAmber = Color(red: 0.48, green: 0.31, blue: 0)
+                let darkRed = Color(red: 0.64, green: 0.18, blue: 0.10)
                 VStack(spacing: 8) {
                     ForEach(step.ingredients) { ing in
                         HStack(spacing: 12) {
-                            Text(ing.emoji).font(.system(size: 30))
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(ing.kid)
-                                    .font(.rounded(23, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.48, green: 0.31, blue: 0))
-                                Text("\(ing.name) · \(ing.grown)")
-                                    .font(.rounded(13, weight: .medium))
-                                    .foregroundStyle(Kid.inkSoft)
-                            }
-                            Spacer()
+                            Text(ing.emoji).font(.system(size: 28))
+                            (Text("\(ing.name) — ").font(.rounded(18, weight: .medium)).foregroundColor(Kid.ink)
+                             + Text(ing.kid).font(.rounded(19, weight: .bold)).foregroundColor(darkAmber)
+                             + Text("  [\(ing.precise(vm.metric))]").font(.rounded(15, weight: .medium)).foregroundColor(Kid.inkSoft))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
                         }
                         .padding(.vertical, 11).padding(.horizontal, 15)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(RoundedRectangle(cornerRadius: 14).fill(Kid.sunnySoft))
+
+                        if let alt = ing.alt {
+                            HStack(spacing: 12) {
+                                Text(alt.emoji).font(.system(size: 28))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    (Text("\(alt.title) — ").font(.rounded(18, weight: .medium)).foregroundColor(darkRed)
+                                     + Text(alt.kid).font(.rounded(19, weight: .bold)).foregroundColor(darkRed)
+                                     + Text("  [\(alt.precise(vm.metric))]").font(.rounded(15, weight: .medium)).foregroundColor(darkRed.opacity(0.7)))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Text(alt.sub)
+                                        .font(.rounded(12, weight: .semibold))
+                                        .foregroundColor(darkRed.opacity(0.9))
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.vertical, 11).padding(.horizontal, 15)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Color(red: 1.0, green: 0.91, blue: 0.90)))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Kid.tomato.opacity(0.55), lineWidth: 2))
+                        }
                     }
                 }
             }
