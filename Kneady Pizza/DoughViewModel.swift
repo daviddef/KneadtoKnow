@@ -304,7 +304,7 @@ final class DoughViewModel: ObservableObject {
 
         var rows: [(String, String)] = [
             ("Style", i.style.name),
-            ("Mode", i.keepItSimple ? "Keep it simple" : "Advanced"),
+            ("Mode", i.keepItSimple ? "Simple" : "Classic"),
             ("Make", "\(i.ballCount) \(noun) · \(size)"),
             ("Yeast", i.yeast.fullName),
             ("Pre-ferment", i.usePreferment ? "\(i.preferment.name) · \(pct(i.prefermentPct)) of flour" : "None"),

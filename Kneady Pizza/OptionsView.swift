@@ -33,7 +33,7 @@ struct MenuDrawer: View {
                             .font(.rounded(12, weight: .bold))
                             .foregroundStyle(Palette.textSoft)
                         TactileSegmented(options: AppMode.allCases, selection: modeBinding) { $0.label }
-                        Text("Keep it simple sets things up for you · Classic gives full control · Kid is a big, fun pizza game for children.")
+                        Text("Simple sets things up for you · Classic gives full control · Kid is a big, fun pizza game for children.")
                             .font(.rounded(11))
                             .foregroundStyle(Palette.textSoft)
                             .fixedSize(horizontal: false, vertical: true)
@@ -212,7 +212,7 @@ enum AppMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .simple:  return "Keep it simple"
+        case .simple:  return "Simple"
         case .classic: return "Classic"
         case .kid:     return "🧒 Kid"
         }

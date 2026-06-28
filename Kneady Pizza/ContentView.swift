@@ -872,7 +872,7 @@ struct ContentView: View {
                 )
 
                 if vm.input.keepItSimple {
-                    Text("Each \(shape.noun) is sized automatically for \(vm.input.style.name) — about \(Units.weight(vm.input.style.defaultBallWeight, metric: vm.metric)). Turn off “Keep it simple” in the menu to set it yourself.")
+                    Text("Each \(shape.noun) is sized automatically for \(vm.input.style.name) — about \(Units.weight(vm.input.style.defaultBallWeight, metric: vm.metric)). Switch to Classic mode in the menu to set it yourself.")
                         .font(.rounded(11))
                         .foregroundStyle(Palette.textSoft)
                         .fixedSize(horizontal: false, vertical: true)
