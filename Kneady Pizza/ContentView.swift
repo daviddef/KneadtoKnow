@@ -285,7 +285,9 @@ struct ContentView: View {
                           startIndex: focus.id,
                           itemsFor: { vm.stepItems(for: $0) },
                           metric: vm.metric,
-                          now: vm.now)
+                          now: vm.now,
+                          completed: $completedSteps,
+                          onToggle: { toggleStepDone($0) })
         }
         .confirmationDialog("Finished cooking?", isPresented: $confirmCancelBake, titleVisibility: .visible) {
             Button("Yes, all done") {

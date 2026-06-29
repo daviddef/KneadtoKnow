@@ -125,12 +125,16 @@ struct KidModeView: View {
                     Spacer()
                     exitButton
                 }
+                Image("kid-hero-toss")
+                    .resizable().scaledToFill()
+                    .frame(height: 130).frame(maxWidth: .infinity).clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 Text("Pick your pizza!")
                     .font(.rounded(30, weight: .bold)).foregroundStyle(Kid.tomatoDk)
 
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                     ForEach(KidLibrary.presets) { p in
-                        tile(p.emoji, p.name, blurb: p.blurb, bg: Kid.sunnySoft) { choose(p) }
+                        tile(p.emoji, p.name, blurb: p.blurb, art: p.art, bg: Kid.sunnySoft) { choose(p) }
                     }
                     Button { Haptics.tap(); resetBuilder(); withAnimation { phase = .build } } label: {
                         VStack(spacing: 4) {
@@ -148,7 +152,7 @@ struct KidModeView: View {
                     Text("⭐ My Pizzas").font(.rounded(16, weight: .bold)).foregroundStyle(Kid.ink).padding(.top, 6)
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                         ForEach(saved) { p in
-                            tile(p.emoji, p.name, blurb: p.blurb, bg: Kid.grapeSoft) { choose(p) }
+                            tile(p.emoji, p.name, blurb: p.blurb, art: p.art, bg: Kid.grapeSoft) { choose(p) }
                         }
                     }
                 }
@@ -157,19 +161,27 @@ struct KidModeView: View {
         }
     }
 
-    private func tile(_ emoji: String, _ name: String, blurb: String? = nil, bg: Color, action: @escaping () -> Void) -> some View {
+    private func tile(_ emoji: String, _ name: String, blurb: String? = nil, art: String? = nil, bg: Color, action: @escaping () -> Void) -> some View {
         Button(action: { Haptics.tap(); action() }) {
-            VStack(spacing: 3) {
-                Text(emoji).font(.system(size: 28))
-                Text(name).font(.rounded(14, weight: .bold)).foregroundStyle(Kid.ink)
-                    .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
-                if let b = blurb, !b.isEmpty {
-                    Text(b).font(.rounded(11, weight: .medium)).foregroundStyle(Kid.inkSoft)
-                        .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+            VStack(spacing: 0) {
+                if let art {
+                    Image(art).resizable().scaledToFill()
+                        .frame(height: 84).frame(maxWidth: .infinity).clipped()
+                } else {
+                    Text(emoji).font(.system(size: 28)).frame(height: 58)
                 }
+                VStack(spacing: 3) {
+                    Text(name).font(.rounded(14, weight: .bold)).foregroundStyle(Kid.ink)
+                        .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+                    if let b = blurb, !b.isEmpty {
+                        Text(b).font(.rounded(11, weight: .medium)).foregroundStyle(Kid.inkSoft)
+                            .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+                    }
+                }
+                .frame(maxWidth: .infinity).padding(.vertical, 10).padding(.horizontal, 6)
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 12).padding(.horizontal, 6)
-            .background(RoundedRectangle(cornerRadius: 18).fill(bg))
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(bg))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -282,6 +294,26 @@ struct KidModeView: View {
                     Spacer()
                     exitButton
                 }
+
+                if let p = pizza {
+                    VStack(spacing: 0) {
+                        if let art = p.art {
+                            Image(art).resizable().scaledToFill()
+                                .frame(height: 120).frame(maxWidth: .infinity).clipped()
+                        } else {
+                            Text(p.emoji).font(.system(size: 46)).frame(height: 100).frame(maxWidth: .infinity)
+                        }
+                        HStack(spacing: 6) {
+                            Text("Your pizza:").font(.rounded(13, weight: .medium)).foregroundStyle(Kid.inkSoft)
+                            Text(p.name).font(.rounded(16, weight: .bold)).foregroundStyle(Kid.ink)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 10)
+                    }
+                    .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Kid.sunnySoft))
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+
                 Text("How shall we make it?")
                     .font(.rounded(28, weight: .bold)).foregroundStyle(Kid.tomatoDk)
                     .multilineTextAlignment(.leading)
@@ -367,7 +399,14 @@ struct KidModeView: View {
     private func stepCard(_ step: KidStep, idx: Int) -> some View {
         let isLast = idx == steps.count - 1
         return VStack(spacing: 12) {
-            Text(step.emoji).font(.system(size: 64)).padding(.top, 6)
+            if let art = step.art {
+                Image(art).resizable().scaledToFill()
+                    .frame(height: 150).frame(maxWidth: .infinity).clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .padding(.top, 4)
+            } else {
+                Text(step.emoji).font(.system(size: 64)).padding(.top, 6)
+            }
             Text(step.title).font(.rounded(28, weight: .bold)).foregroundStyle(Kid.tomatoDk)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             Text(step.detail).font(.rounded(18, weight: .medium)).foregroundStyle(Kid.ink)
@@ -467,7 +506,11 @@ struct KidModeView: View {
         ZStack {
             ConfettiView(looping: true).ignoresSafeArea()
             VStack(spacing: 14) {
-                Text("🎉🍕").font(.system(size: 64))
+                Image("kid-chef-point")
+                    .resizable().scaledToFill()
+                    .frame(height: 150).frame(maxWidth: .infinity).clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .padding(.horizontal, 20)
                 Text("YOU MADE PIZZA!").font(.rounded(30, weight: .bold)).foregroundStyle(Kid.tomatoDk)
                     .multilineTextAlignment(.center)
                 Text("You're a real pizza chef now.").font(.rounded(16, weight: .medium)).foregroundStyle(Kid.ink)

@@ -105,6 +105,7 @@ struct KidPizza: Identifiable, Codable, Hashable {
     var cheese: Bool
     var extras: [KidTopping]
     var blurb: String? = nil   // a short "what's on it" line for the tile
+    var art: String? = nil     // asset name for the tile illustration
     var custom: Bool = false
 }
 
@@ -112,6 +113,7 @@ struct KidPizza: Identifiable, Codable, Hashable {
 struct KidStep: Identifiable {
     let id = UUID()
     var emoji: String
+    var art: String? = nil   // asset name for a big step illustration
     var title: String
     var detail: String
     var chips: [String] = []
@@ -149,13 +151,13 @@ enum KidLibrary {
 
     /// The tappable picker tiles.
     static let presets: [KidPizza] = [
-        .init(id: "cheese",   name: "Just Cheese",       emoji: "🧀",   sauce: true,  cheese: true,  extras: [],                  blurb: "gooey melty cheese"),
-        .init(id: "pep",      name: "Pepperoni",         emoji: "🍕",   sauce: true,  cheese: true,  extras: [pepperoni],         blurb: "cheese + spicy pepperoni"),
-        .init(id: "hawaii",   name: "Hawaiian",          emoji: "🍍🍖", sauce: true,  cheese: true,  extras: [ham, pineapple],    blurb: "ham + pineapple"),
-        .init(id: "marg",     name: "Margherita",        emoji: "🍅🌿", sauce: true,  cheese: true,  extras: [basil],             blurb: "cheese + basil leaves"),
-        .init(id: "veggie",   name: "Rainbow Veggie",    emoji: "🌈🫑", sauce: true,  cheese: true,  extras: [peppers, corn],     blurb: "peppers + sweetcorn"),
-        .init(id: "nutella",  name: "Nutella & Banana",  emoji: "🍫🍌", sauce: false, cheese: false, extras: [nutella, banana],   blurb: "choc + banana (sweet!)"),
-        .init(id: "dino",     name: "Dino Pepperoni",    emoji: "🦕",   sauce: true,  cheese: true,  extras: [pepperoni],         blurb: "pepperoni — RAWR! 🦖"),
+        .init(id: "cheese",   name: "Just Cheese",       emoji: "🧀",   sauce: true,  cheese: true,  extras: [],                  blurb: "gooey melty cheese",      art: "kid-cheese"),
+        .init(id: "pep",      name: "Pepperoni",         emoji: "🍕",   sauce: true,  cheese: true,  extras: [pepperoni],         blurb: "cheese + spicy pepperoni", art: "kid-pepperoni"),
+        .init(id: "hawaii",   name: "Hawaiian",          emoji: "🍍🍖", sauce: true,  cheese: true,  extras: [ham, pineapple],    blurb: "ham + pineapple",         art: "kid-hawaiian"),
+        .init(id: "marg",     name: "Margherita",        emoji: "🍅🌿", sauce: true,  cheese: true,  extras: [basil],             blurb: "cheese + basil leaves",   art: "kid-margherita"),
+        .init(id: "veggie",   name: "Rainbow Veggie",    emoji: "🌈🫑", sauce: true,  cheese: true,  extras: [peppers, corn],     blurb: "peppers + sweetcorn",     art: "kid-veggie"),
+        .init(id: "nutella",  name: "Nutella & Banana",  emoji: "🍫🍌", sauce: false, cheese: false, extras: [nutella, banana],   blurb: "choc + banana (sweet!)",  art: "kid-nutella"),
+        .init(id: "dino",     name: "Dino Pepperoni",    emoji: "🦕",   sauce: true,  cheese: true,  extras: [pepperoni],         blurb: "pepperoni — RAWR! 🦖",    art: "kid-dino"),
     ]
 
     // Builder option groups.
@@ -178,18 +180,18 @@ enum KidRecipe {
     static func steps(for pizza: KidPizza, dough: KidDough, metric: Bool) -> [KidStep] {
         var s: [KidStep] = []
 
-        s.append(KidStep(emoji: "🥣", title: "Mix it all up!",
+        s.append(KidStep(emoji: "🥣", art: "kid-step-mix", title: "Mix it all up!",
                          detail: "Tip everything into the bowl and mix into a lumpy, shaggy ball!",
                          ingredients: dough.ingredients,
                          tip: "Wash your hands first — go go go!"))
 
-        s.append(KidStep(emoji: "👐", title: "Knead & squish!",
+        s.append(KidStep(emoji: "👐", art: "kid-step-knead", title: "Knead & squish!",
                          detail: "Push it, fold it, turn it! Squish until it's smooth and bouncy.",
                          banner: KidBanner(icon: "⏲️", value: "2 minutes", sub: "squish until smooth & bouncy!"),
                          joke: jokes[1]))
 
         if dough == .puffy {
-            s.append(KidStep(emoji: "🎈", title: "Let it puff up!",
+            s.append(KidStep(emoji: "🎈", art: "kid-step-puff", title: "Let it puff up!",
                              detail: "Pop it somewhere cosy and let it grow big — like a balloon!",
                              banner: KidBanner(icon: "⏰", value: "About 1 hour", sub: "until it's twice as big!"),
                              tip: "Peek now and then — it's getting bigger!"))
@@ -200,7 +202,7 @@ enum KidRecipe {
                          tip: "Messy is OK — that's the fun bit!"))
 
         if pizza.sauce {
-            s.append(KidStep(emoji: "🍅", title: "Splat the sauce!",
+            s.append(KidStep(emoji: "🍅", art: "kid-step-sauce", title: "Splat the sauce!",
                              detail: "Spoon it on and spread it round and round — leave a little edge!",
                              chips: ["🥄 a big spoon of sauce"],
                              tip: "Grown-up tip: passata or a thin pizza sauce"))

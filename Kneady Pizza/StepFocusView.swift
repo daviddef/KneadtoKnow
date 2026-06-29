@@ -8,6 +8,8 @@ struct StepFocusView: View {
     var itemsFor: (ScheduleStep) -> [Ingredient] = { _ in [] }
     var metric: Bool = true
     var now: Date = Date()
+    @Binding var completed: Set<Int>
+    var onToggle: (Int) -> Void = { _ in }
     @Environment(\.dismiss) private var dismiss
     @State private var page = 0
 
@@ -16,7 +18,7 @@ struct StepFocusView: View {
             TabView(selection: $page) {
                 ForEach(Array(steps.enumerated()), id: \.offset) { idx, step in
                     ScrollView {
-                        stepContent(step)
+                        stepContent(step, idx: idx)
                             .padding(24)
                     }
                     .tag(idx)
@@ -38,15 +40,16 @@ struct StepFocusView: View {
         .onAppear { page = min(max(startIndex, 0), max(steps.count - 1, 0)) }
     }
 
-    private func stepContent(_ step: ScheduleStep) -> some View {
-        VStack(alignment: .leading, spacing: 22) {
+    private func stepContent(_ step: ScheduleStep, idx: Int) -> some View {
+        let done = completed.contains(idx)
+        return VStack(alignment: .leading, spacing: 22) {
             // Big icon + time
             HStack(spacing: 14) {
                 ZStack {
                     Circle()
-                        .fill(Palette.accent)
+                        .fill(done ? Palette.sage : Palette.accent)
                         .frame(width: 64, height: 64)
-                    Image(systemName: step.icon)
+                    Image(systemName: done ? "checkmark" : step.icon)
                         .font(.rounded(28, weight: .semibold))
                         .foregroundStyle(.white)
                 }
@@ -67,6 +70,7 @@ struct StepFocusView: View {
             Text(step.title)
                 .font(.rounded(32, weight: .bold))
                 .foregroundStyle(Palette.text)
+                .strikethrough(done)
                 .fixedSize(horizontal: false, vertical: true)
 
             if step.leadHours > 0 {
@@ -85,6 +89,7 @@ struct StepFocusView: View {
             Text(step.detail)
                 .font(.rounded(22, weight: .medium))
                 .foregroundStyle(Palette.text)
+                .strikethrough(done)
                 .lineSpacing(6)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -95,9 +100,11 @@ struct StepFocusView: View {
                         HStack(alignment: .firstTextBaseline) {
                             Text(item.name)
                                 .foregroundStyle(Palette.text)
+                                .strikethrough(done)
                             Spacer()
                             Text(Units.weight(item.grams, metric: metric))
                                 .foregroundStyle(Palette.accent)
+                                .strikethrough(done)
                         }
                         .font(.rounded(20, weight: .semibold))
                     }
@@ -114,12 +121,22 @@ struct StepFocusView: View {
                 }
                 .font(.rounded(16, weight: .medium))
                 .foregroundStyle(Palette.amber)
+                .strikethrough(done)
                 .fixedSize(horizontal: false, vertical: true)
             }
+
+            Label(done ? "Done — double-tap to undo" : "Double-tap to mark done",
+                  systemImage: done ? "checkmark.circle.fill" : "hand.tap.fill")
+                .font(.rounded(14, weight: .semibold))
+                .foregroundStyle(done ? Palette.sage : Palette.textSoft)
+                .padding(.top, 4)
 
             Spacer(minLength: 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .opacity(done ? 0.6 : 1)
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) { onToggle(idx); Haptics.tap() }
     }
 
     /// The rest after this step — duration, where it happens, and overnight note.
