@@ -81,15 +81,16 @@ struct KidModeView: View {
             Haptics.tap()
             vm.kidMode = false
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: 6) {
                 Image(systemName: "person.fill")
                 Text("Grown-ups")
             }
-            .font(.rounded(13, weight: .bold))
+            .font(.rounded(15, weight: .bold))
             .foregroundStyle(Kid.inkSoft)
-            .padding(.horizontal, 12).padding(.vertical, 7)
+            .padding(.horizontal, 16).padding(.vertical, 11)
             .background(Capsule().fill(.white))
             .overlay(Capsule().stroke(Kid.inkSoft.opacity(0.25), lineWidth: 1))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -127,7 +128,7 @@ struct KidModeView: View {
                 }
                 Group {
                     if VideoLoopView.exists("kid-hero-toss") {
-                        VideoLoopView(resource: "kid-hero-toss")
+                        KidVideo(resource: "kid-hero-toss")
                             .frame(height: 130).frame(maxWidth: .infinity)
                     } else {
                         Image("kid-hero-toss").resizable().scaledToFill()
@@ -208,7 +209,7 @@ struct KidModeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Button { Haptics.tap(); withAnimation { phase = .pick } } label: {
-                        Image(systemName: "chevron.left").font(.rounded(18, weight: .bold)).foregroundStyle(Kid.inkSoft)
+                        Image(systemName: "chevron.left").font(.rounded(20, weight: .bold)).foregroundStyle(Kid.inkSoft).frame(width: 46, height: 46).contentShape(Rectangle())
                     }.buttonStyle(.plain)
                     Spacer()
                     exitButton
@@ -295,7 +296,7 @@ struct KidModeView: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Button { Haptics.tap(); withAnimation { phase = .pick } } label: {
-                        Image(systemName: "chevron.left").font(.rounded(18, weight: .bold)).foregroundStyle(Kid.inkSoft)
+                        Image(systemName: "chevron.left").font(.rounded(20, weight: .bold)).foregroundStyle(Kid.inkSoft).frame(width: 46, height: 46).contentShape(Rectangle())
                     }.buttonStyle(.plain)
                     Spacer()
                     exitButton
@@ -374,7 +375,7 @@ struct KidModeView: View {
         VStack(spacing: 10) {
             HStack {
                 Button { Haptics.tap(); withAnimation { phase = .dough } } label: {
-                    Image(systemName: "chevron.left").font(.rounded(18, weight: .bold)).foregroundStyle(Kid.inkSoft)
+                    Image(systemName: "chevron.left").font(.rounded(20, weight: .bold)).foregroundStyle(Kid.inkSoft).frame(width: 46, height: 46).contentShape(Rectangle())
                 }.buttonStyle(.plain)
                 Spacer()
                 Text("Step \(stepPage + 1) of \(steps.count)")
@@ -406,7 +407,7 @@ struct KidModeView: View {
         let isLast = idx == steps.count - 1
         return VStack(spacing: 12) {
             if let video = step.video, VideoLoopView.exists(video) {
-                VideoLoopView(resource: video)
+                KidVideo(resource: video)
                     .frame(height: 150).frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .padding(.top, 4)

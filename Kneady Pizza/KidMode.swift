@@ -30,6 +30,7 @@ struct KidTopping: Identifiable, Codable, Hashable {
     let kidAmount: String
     let grownupTip: String
     var veggie: Bool = false
+    var video: String? = nil   // bundled .mp4 base name for an animated "add it" step
 }
 
 /// The two kid dough options.
@@ -136,7 +137,7 @@ struct KidBanner {
 // MARK: - Topping & pizza library
 
 enum KidLibrary {
-    static let pepperoni  = KidTopping(name: "Pepperoni", emoji: "🍕", kidAmount: "a circle of pepperonis", grownupTip: "thin slices, not too many")
+    static let pepperoni  = KidTopping(name: "Pepperoni", emoji: "🍕", kidAmount: "a circle of pepperonis", grownupTip: "thin slices, not too many", video: "kid-topping-pepperoni")
     static let ham        = KidTopping(name: "Ham", emoji: "🍖", kidAmount: "a handful of ham", grownupTip: "pre-cooked ham, torn up")
     static let pineapple  = KidTopping(name: "Pineapple", emoji: "🍍", kidAmount: "little pineapple chunks", grownupTip: "pat the pieces dry first")
     static let basil      = KidTopping(name: "Basil", emoji: "🌿", kidAmount: "a few basil leaves", grownupTip: "add after baking")
@@ -216,7 +217,7 @@ enum KidRecipe {
                              tip: "Grown-up tip: low-moisture mozzarella, grated"))
         }
         for t in pizza.extras {
-            s.append(KidStep(emoji: t.emoji, title: "Add the \(t.name.lowercased())!",
+            s.append(KidStep(emoji: t.emoji, video: t.video ?? "kid-topping-default", title: "Add the \(t.name.lowercased())!",
                              detail: "Pop them on top — make a pattern or a funny face!",
                              chips: ["\(t.emoji) \(t.kidAmount)"],
                              tip: "Grown-up tip: \(t.grownupTip)"))
