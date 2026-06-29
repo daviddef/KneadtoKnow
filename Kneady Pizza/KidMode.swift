@@ -182,7 +182,7 @@ enum KidRecipe {
     static func steps(for pizza: KidPizza, dough: KidDough, metric: Bool) -> [KidStep] {
         var s: [KidStep] = []
 
-        s.append(KidStep(emoji: "🥣", art: "kid-step-mix", title: "Mix it all up!",
+        s.append(KidStep(emoji: "🥣", art: "kid-step-mix", video: "kid-step-mix", title: "Mix it all up!",
                          detail: "Tip everything into the bowl and mix into a lumpy, shaggy ball!",
                          ingredients: dough.ingredients,
                          tip: "Wash your hands first — go go go!"))
@@ -204,7 +204,7 @@ enum KidRecipe {
                          tip: "Messy is OK — that's the fun bit!"))
 
         if pizza.sauce {
-            s.append(KidStep(emoji: "🍅", art: "kid-step-sauce", title: "Splat the sauce!",
+            s.append(KidStep(emoji: "🍅", art: "kid-step-sauce", video: "kid-step-sauce", title: "Splat the sauce!",
                              detail: "Spoon it on and spread it round and round — leave a little edge!",
                              chips: ["🥄 a big spoon of sauce"],
                              tip: "Grown-up tip: passata or a thin pizza sauce"))
@@ -217,7 +217,7 @@ enum KidRecipe {
                              tip: "Grown-up tip: low-moisture mozzarella, grated"))
         }
         for t in pizza.extras {
-            s.append(KidStep(emoji: t.emoji, video: t.video ?? "kid-topping-default", title: "Add the \(t.name.lowercased())!",
+            s.append(KidStep(emoji: t.emoji, video: t.video, title: "Add the \(t.name.lowercased())!",
                              detail: "Pop them on top — make a pattern or a funny face!",
                              chips: ["\(t.emoji) \(t.kidAmount)"],
                              tip: "Grown-up tip: \(t.grownupTip)"))

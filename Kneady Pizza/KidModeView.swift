@@ -428,7 +428,7 @@ struct KidModeView: View {
             KidVideo(resource: video, muted: $videosMuted, isActive: idx == stepPage)
                 .frame(height: 150).frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .id(video)
+                .id("step-\(idx)-\(video)")
                 .padding(.top, 4)
         } else if let art = step.art {
             Image(art).resizable().scaledToFill()
