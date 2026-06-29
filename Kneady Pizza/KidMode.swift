@@ -113,7 +113,8 @@ struct KidPizza: Identifiable, Codable, Hashable {
 struct KidStep: Identifiable {
     let id = UUID()
     var emoji: String
-    var art: String? = nil   // asset name for a big step illustration
+    var art: String? = nil    // asset name for a big step illustration
+    var video: String? = nil  // bundled .mp4 base name for an animated step
     var title: String
     var detail: String
     var chips: [String] = []
@@ -208,7 +209,7 @@ enum KidRecipe {
                              tip: "Grown-up tip: passata or a thin pizza sauce"))
         }
         if pizza.cheese {
-            s.append(KidStep(emoji: "🧀", title: "Snow the cheese!",
+            s.append(KidStep(emoji: "🧀", art: "kid-step-cheese", video: "kid-step-cheese", title: "Snow the cheese!",
                              detail: "Sprinkle it everywhere like snow!",
                              chips: ["🧀 2 big handfuls"],
                              joke: jokes[2],

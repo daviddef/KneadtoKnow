@@ -125,10 +125,16 @@ struct KidModeView: View {
                     Spacer()
                     exitButton
                 }
-                Image("kid-hero-toss")
-                    .resizable().scaledToFill()
-                    .frame(height: 130).frame(maxWidth: .infinity).clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                Group {
+                    if VideoLoopView.exists("kid-hero-toss") {
+                        VideoLoopView(resource: "kid-hero-toss")
+                            .frame(height: 130).frame(maxWidth: .infinity)
+                    } else {
+                        Image("kid-hero-toss").resizable().scaledToFill()
+                            .frame(height: 130).frame(maxWidth: .infinity).clipped()
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 Text("Pick your pizza!")
                     .font(.rounded(30, weight: .bold)).foregroundStyle(Kid.tomatoDk)
 
@@ -399,7 +405,12 @@ struct KidModeView: View {
     private func stepCard(_ step: KidStep, idx: Int) -> some View {
         let isLast = idx == steps.count - 1
         return VStack(spacing: 12) {
-            if let art = step.art {
+            if let video = step.video, VideoLoopView.exists(video) {
+                VideoLoopView(resource: video)
+                    .frame(height: 150).frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .padding(.top, 4)
+            } else if let art = step.art {
                 Image(art).resizable().scaledToFill()
                     .frame(height: 150).frame(maxWidth: .infinity).clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
