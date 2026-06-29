@@ -48,6 +48,7 @@ struct KidModeView: View {
     @State private var steps: [KidStep] = []
     @State private var stepPage = 0
     @State private var burst = false
+    @State private var videosMuted = true   // one mute switch for every clip
 
     // Make-your-own selections
     @State private var bSauce = true
@@ -128,7 +129,7 @@ struct KidModeView: View {
                 }
                 Group {
                     if VideoLoopView.exists("kid-hero-toss") {
-                        KidVideo(resource: "kid-hero-toss")
+                        KidVideo(resource: "kid-hero-toss", muted: $videosMuted)
                             .frame(height: 130).frame(maxWidth: .infinity)
                     } else {
                         Image("kid-hero-toss").resizable().scaledToFill()
@@ -387,8 +388,7 @@ struct KidModeView: View {
 
             TabView(selection: $stepPage) {
                 ForEach(Array(steps.enumerated()), id: \.offset) { idx, step in
-                    ScrollView { stepCard(step, idx: idx).padding(.horizontal, 18).padding(.bottom, 20) }
-                        .tag(idx)
+                    stepPageView(step, idx: idx).tag(idx)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -403,24 +403,45 @@ struct KidModeView: View {
         }
     }
 
-    private func stepCard(_ step: KidStep, idx: Int) -> some View {
+    private func stepPageView(_ step: KidStep, idx: Int) -> some View {
         let isLast = idx == steps.count - 1
         return VStack(spacing: 12) {
-            if let video = step.video, VideoLoopView.exists(video) {
-                KidVideo(resource: video)
-                    .frame(height: 150).frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .padding(.top, 4)
-            } else if let art = step.art {
-                Image(art).resizable().scaledToFill()
-                    .frame(height: 150).frame(maxWidth: .infinity).clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .padding(.top, 4)
-            } else {
-                Text(step.emoji).font(.system(size: 64)).padding(.top, 6)
-            }
+            // Pinned: the media and the "I did it!" button stay put while the
+            // details below scroll.
+            stepMedia(step, idx: idx)
             Text(step.title).font(.rounded(28, weight: .bold)).foregroundStyle(Kid.tomatoDk)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            bigButton(isLast ? "It's ready! 🎉" : "I did it! ✓") {
+                Haptics.success(); popConfetti()
+                if isLast { withAnimation { phase = .celebrate } }
+                else { withAnimation { stepPage += 1 } }
+            }
+            ScrollView(showsIndicators: false) {
+                stepDetails(step).padding(.bottom, 16)
+            }
+        }
+        .padding(.horizontal, 18).padding(.top, 4)
+    }
+
+    @ViewBuilder private func stepMedia(_ step: KidStep, idx: Int) -> some View {
+        if let video = step.video, VideoLoopView.exists(video) {
+            KidVideo(resource: video, muted: $videosMuted, isActive: idx == stepPage)
+                .frame(height: 150).frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .id(video)
+                .padding(.top, 4)
+        } else if let art = step.art {
+            Image(art).resizable().scaledToFill()
+                .frame(height: 150).frame(maxWidth: .infinity).clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .padding(.top, 4)
+        } else {
+            Text(step.emoji).font(.system(size: 64)).frame(height: 120)
+        }
+    }
+
+    private func stepDetails(_ step: KidStep) -> some View {
+        VStack(spacing: 12) {
             Text(step.detail).font(.rounded(18, weight: .medium)).foregroundStyle(Kid.ink)
                 .multilineTextAlignment(.center).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
 
@@ -502,13 +523,6 @@ struct KidModeView: View {
                     .background(RoundedRectangle(cornerRadius: 14).fill(Color(red: 1.0, green: 0.89, blue: 0.86)))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Kid.tomato.opacity(0.5), lineWidth: 2))
             }
-
-            bigButton(isLast ? "It's ready! 🎉" : "I did it! ✓") {
-                Haptics.success(); popConfetti()
-                if isLast { withAnimation { phase = .celebrate } }
-                else { withAnimation { stepPage += 1 } }
-            }
-            .padding(.top, 4)
         }
     }
 

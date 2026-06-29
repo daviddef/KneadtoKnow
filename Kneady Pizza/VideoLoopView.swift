@@ -1,14 +1,16 @@
 import SwiftUI
 import AVFoundation
 
-/// A silent-by-default, auto-looping inline video with a mute/unmute button —
-/// used for animated Kid Mode steps and the hero.
+/// An auto-looping inline video with a mute/unmute button. Mute is driven by a
+/// shared binding (so one button controls every clip), and the video only plays
+/// while it's the active page — otherwise it pauses on the current frame.
 struct KidVideo: View {
     let resource: String
-    @State private var muted = true
+    @Binding var muted: Bool
+    var isActive: Bool = true
 
     var body: some View {
-        VideoLoopView(resource: resource, muted: muted)
+        VideoLoopView(resource: resource, muted: muted, isActive: isActive)
             .overlay(alignment: .bottomTrailing) {
                 Button {
                     Haptics.tap()
@@ -40,9 +42,13 @@ enum KidAudio {
 struct VideoLoopView: UIViewRepresentable {
     let resource: String
     var muted: Bool = true
+    var isActive: Bool = true
 
     func makeUIView(context: Context) -> LoopingPlayerUIView { LoopingPlayerUIView(resource: resource) }
-    func updateUIView(_ uiView: LoopingPlayerUIView, context: Context) { uiView.setMuted(muted) }
+    func updateUIView(_ uiView: LoopingPlayerUIView, context: Context) {
+        uiView.setMuted(muted)
+        uiView.setActive(isActive)
+    }
 
     /// Whether the clip exists in the bundle — so the caller can fall back.
     static func exists(_ resource: String) -> Bool {
@@ -54,6 +60,7 @@ final class LoopingPlayerUIView: UIView {
     private var queue: AVQueuePlayer?
     private var looper: AVPlayerLooper?
     private let playerLayer = AVPlayerLayer()
+    private var active = true
 
     init(resource: String) {
         super.init(frame: .zero)
@@ -73,6 +80,13 @@ final class LoopingPlayerUIView: UIView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func setMuted(_ muted: Bool) { queue?.isMuted = muted }
+
+    /// Play only the active page; pause (freeze the frame) otherwise.
+    func setActive(_ isActive: Bool) {
+        guard isActive != active else { return }
+        active = isActive
+        if isActive { queue?.play() } else { queue?.pause() }
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()
