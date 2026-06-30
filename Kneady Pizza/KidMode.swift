@@ -139,7 +139,7 @@ struct KidBanner {
 enum KidLibrary {
     static let pepperoni  = KidTopping(name: "Pepperoni", emoji: "🍕", kidAmount: "a circle of pepperonis", grownupTip: "thin slices, not too many", video: "kid-topping-pepperoni")
     static let ham        = KidTopping(name: "Ham", emoji: "🍖", kidAmount: "a handful of ham", grownupTip: "pre-cooked ham, torn up")
-    static let pineapple  = KidTopping(name: "Pineapple", emoji: "🍍", kidAmount: "little pineapple chunks", grownupTip: "pat the pieces dry first")
+    static let pineapple  = KidTopping(name: "Pineapple", emoji: "🍍", kidAmount: "little pineapple chunks", grownupTip: "pat the pieces dry first", video: "kid-topping-pineapple")
     static let basil      = KidTopping(name: "Basil", emoji: "🌿", kidAmount: "a few basil leaves", grownupTip: "add after baking")
     static let peppers    = KidTopping(name: "Peppers", emoji: "🫑", kidAmount: "colourful pepper strips", grownupTip: "chop small and thin", veggie: true)
     static let corn       = KidTopping(name: "Sweetcorn", emoji: "🌽", kidAmount: "a sprinkle of corn", grownupTip: "drain it well", veggie: true)
@@ -187,19 +187,19 @@ enum KidRecipe {
                          ingredients: dough.ingredients,
                          tip: "Wash your hands first — go go go!"))
 
-        s.append(KidStep(emoji: "👐", art: "kid-step-knead", title: "Knead & squish!",
+        s.append(KidStep(emoji: "👐", art: "kid-step-knead", video: "kid-step-knead", title: "Knead & squish!",
                          detail: "Push it, fold it, turn it! Squish until it's smooth and bouncy.",
                          banner: KidBanner(icon: "⏲️", value: "2 minutes", sub: "squish until smooth & bouncy!"),
                          joke: jokes[1]))
 
         if dough == .puffy {
-            s.append(KidStep(emoji: "🎈", art: "kid-step-puff", title: "Let it puff up!",
+            s.append(KidStep(emoji: "🎈", art: "kid-step-puff", video: "kid-step-puff", title: "Let it puff up!",
                              detail: "Pop it somewhere cosy and let it grow big — like a balloon!",
                              banner: KidBanner(icon: "⏰", value: "About 1 hour", sub: "until it's twice as big!"),
                              tip: "Peek now and then — it's getting bigger!"))
         }
 
-        s.append(KidStep(emoji: "🫓", title: "Press it flat!",
+        s.append(KidStep(emoji: "🫓", video: "kid-step-flatten", title: "Press it flat!",
                          detail: "Squish it flat and round like a moon — push from the middle out!",
                          tip: "Messy is OK — that's the fun bit!"))
 
@@ -223,7 +223,7 @@ enum KidRecipe {
                              tip: "Grown-up tip: \(t.grownupTip)"))
         }
 
-        s.append(KidStep(emoji: "🔥", title: "Into the oven!",
+        s.append(KidStep(emoji: "🔥", video: "kid-step-oven", title: "Into the oven!",
                          detail: "Ovens are super HOT — time to grab a grown-up to help!",
                          banner: KidBanner(icon: "🔥", value: "About 10 minutes",
                                            sub: metric ? "at 220°C" : "at 425°F", warm: true),
