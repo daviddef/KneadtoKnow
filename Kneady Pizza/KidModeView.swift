@@ -545,11 +545,20 @@ struct KidModeView: View {
         ZStack {
             ConfettiView(looping: true).ignoresSafeArea()
             VStack(spacing: 14) {
-                Image("kid-chef-point")
-                    .resizable().scaledToFill()
-                    .frame(height: 150).frame(maxWidth: .infinity).clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .padding(.horizontal, 20)
+                Group {
+                    if VideoLoopView.exists("kid-celebrate") {
+                        KidVideo(resource: "kid-celebrate", muted: $videosMuted)
+                            .frame(height: 170).frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            .id("kid-celebrate")
+                    } else {
+                        Image("kid-chef-point")
+                            .resizable().scaledToFill()
+                            .frame(height: 150).frame(maxWidth: .infinity).clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+                }
+                .padding(.horizontal, 20)
                 Text("YOU MADE PIZZA!").font(.rounded(30, weight: .bold)).foregroundStyle(Kid.tomatoDk)
                     .multilineTextAlignment(.center)
                 Text("You're a real pizza chef now.").font(.rounded(16, weight: .medium)).foregroundStyle(Kid.ink)

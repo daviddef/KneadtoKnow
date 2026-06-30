@@ -5,18 +5,23 @@ Briefs for the Pizza Party chef videos. Each entry has the **filename** (drop th
 prompt), and what he **says** (kid voiceover). Generate, then hand the files to me
 and I'll bundle + compress them.
 
-## Status (as of build 35)
+## Status (as of build 37)
 
-**Done ✅ (10):** kid-hero-toss · kid-step-mix · kid-step-knead · kid-step-puff ·
-kid-step-flatten · kid-step-sauce · kid-step-cheese · kid-step-oven ·
-kid-topping-pepperoni · kid-topping-pineapple
+**Done ✅ (14):** kid-hero-toss · kid-choose · kid-celebrate · kid-step-mix ·
+kid-step-knead · kid-step-puff · kid-step-flatten · kid-step-sauce · kid-step-cheese ·
+kid-step-oven · kid-topping-pepperoni · kid-topping-pineapple · kid-topping-basil ·
+kid-topping-ham
 
-→ **Every cooking step + the hero are done.** Two toppings done (pepperoni, pineapple).
+→ **Hero, dough-choice, every cooking step, and the celebration are done.**
+Four toppings done (pepperoni, pineapple, basil, ham).
 
 **Still to make:**
-- Toppings: ham, basil, peppers, sweetcorn, mushroom, olives, nutella, banana,
+- Toppings: peppers, sweetcorn, mushroom, olives, nutella, banana,
   chicken, plant pepperoni, beans
-- Optional: pizza-tile loops, celebration (`kid-celebrate`), dough-choice clips
+- Optional: pizza-tile loops
+
+_Videos: muted/unmuted by one shared button (unmuted by default), 15-second pause
+between loops, and only the on-screen clip plays._
 
 ---
 
@@ -68,9 +73,9 @@ flourish.
 | Filename | Chef does | Chef says |
 |---|---|---|
 | `kid-topping-pepperoni.mp4` ✅ | Playfully tosses/flicks pepperoni circles onto the pizza, placing them in a ring. | "Pop on the pepperoni — spicy little circles of yum!" |
-| `kid-topping-ham.mp4` | Scatters torn pieces of ham across the pizza. | "Sprinkle the ham — yummy pink pillows!" |
+| `kid-topping-ham.mp4` ✅ | Scatters torn pieces of ham across the pizza. | "Sprinkle the ham — yummy pink pillows!" |
 | `kid-topping-pineapple.mp4` ✅ | Drops little golden pineapple chunks on, winking cheekily. | "Pineapple time! Sweet and a little bit cheeky — no regrets!" |
-| `kid-topping-basil.mp4` | Gently places fresh green basil leaves, then a little flourish. | "A few green basil leaves — fancy! Smells amazing." |
+| `kid-topping-basil.mp4` ✅ | Gently places fresh green basil leaves, then a little flourish. | "A few green basil leaves — fancy! Smells amazing." |
 | `kid-topping-peppers.mp4` | Scatters colourful red, yellow and green pepper strips. | "Rainbow peppers — red, yellow, green! So crunchy." |
 | `kid-topping-sweetcorn.mp4` | Sprinkles a handful of yellow sweetcorn like little gold nuggets. | "Sprinkle the sweetcorn — pop, pop, pop, little gold bits!" |
 | `kid-topping-mushroom.mp4` | Lays thin mushroom slices around the pizza. | "Add the mushrooms — little umbrellas for your pizza!" |
@@ -104,9 +109,11 @@ want the picker animated; the stills already look great.
 
 | Filename | Chef does | Chef says |
 |---|---|---|
-| `kid-celebrate.mp4` | Chef cheers with both arms up, confetti, presents the finished pizza, big thumbs up. | "YOU MADE PIZZA! You're a real pizza chef now — eat it all up!" |
-| `kid-dough-rightnow.mp4` (optional) | Chef snaps fingers / sprinkles "magic" baking powder, dough appears fast. | "Right now dough — no waiting! Abracadabra!" |
-| `kid-dough-puffy.mp4` (optional) | Chef tucks dough in a cosy spot, it puffs up. | "Puffy dough grows big while you play — bouncy and light!" |
+| `kid-choose.mp4` ✅ | Chef presents the dough / gestures invitingly, deciding how to make it. Header of the "How quickly do you need it?" screen. | "How quickly do you want your pizza? Let's pick!" |
+| `kid-celebrate.mp4` ✅ | Chef cheers with both arms up, confetti, presents the finished pizza, big thumbs up. | "YOU MADE PIZZA! You're a real pizza chef now — eat it all up!" |
+
+_(The separate `kid-dough-rightnow` / `kid-dough-puffy` clips aren't needed — one
+`kid-choose` clip heads the whole dough-choice screen.)_
 
 ---
 

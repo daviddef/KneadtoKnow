@@ -138,7 +138,7 @@ struct KidBanner {
 
 enum KidLibrary {
     static let pepperoni  = KidTopping(name: "Pepperoni", emoji: "🍕", kidAmount: "a circle of pepperonis", grownupTip: "thin slices, not too many", video: "kid-topping-pepperoni")
-    static let ham        = KidTopping(name: "Ham", emoji: "🍖", kidAmount: "a handful of ham", grownupTip: "pre-cooked ham, torn up")
+    static let ham        = KidTopping(name: "Ham", emoji: "🍖", kidAmount: "a handful of ham", grownupTip: "pre-cooked ham, torn up", video: "kid-topping-ham")
     static let pineapple  = KidTopping(name: "Pineapple", emoji: "🍍", kidAmount: "little pineapple chunks", grownupTip: "pat the pieces dry first", video: "kid-topping-pineapple")
     static let basil      = KidTopping(name: "Basil", emoji: "🌿", kidAmount: "a few basil leaves", grownupTip: "add after baking", video: "kid-topping-basil")
     static let peppers    = KidTopping(name: "Peppers", emoji: "🫑", kidAmount: "colourful pepper strips", grownupTip: "chop small and thin", veggie: true)
