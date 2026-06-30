@@ -5,6 +5,19 @@ Briefs for the Pizza Party chef videos. Each entry has the **filename** (drop th
 prompt), and what he **says** (kid voiceover). Generate, then hand the files to me
 and I'll bundle + compress them.
 
+## Status (as of build 35)
+
+**Done ✅ (10):** kid-hero-toss · kid-step-mix · kid-step-knead · kid-step-puff ·
+kid-step-flatten · kid-step-sauce · kid-step-cheese · kid-step-oven ·
+kid-topping-pepperoni · kid-topping-pineapple
+
+→ **Every cooking step + the hero are done.** Two toppings done (pepperoni, pineapple).
+
+**Still to make:**
+- Toppings: ham, basil, peppers, sweetcorn, mushroom, olives, nutella, banana,
+  chicken, plant pepperoni, beans
+- Optional: pizza-tile loops, celebration (`kid-celebrate`), dough-choice clips
+
 ---
 
 ## Consistency notes (paste into every prompt)
@@ -35,15 +48,15 @@ and I'll bundle + compress them.
 | Filename | Chef does | Chef says |
 |---|---|---|
 | `kid-hero-toss.mp4` ✅ | Spins and tosses a disc of dough high in the air, flour sparkling, beaming with joy. | "It's PIZZA TIME! Let's make something yummy!" |
-| `kid-step-mix.mp4` | Tips flour and water into a big bowl and stirs with a wooden spoon, a little flour puff. | "Tip it all in and give it a big mix — squish, squish, squish!" |
-| `kid-step-knead.mp4` | Pushes, folds and turns the dough on the bench with both hands, bouncy and fun. | "Now push it and fold it! Knead till it's smooth and bouncy!" |
-| `kid-step-puff.mp4` ✅(img) | Gestures to a bowl of dough that slowly rises/puffs up like a balloon; he watches, delighted. | "Let it rest and puff up big — like a balloon. Nighty-night, dough!" |
-| `kid-step-flatten.mp4` | Presses the dough ball flat with his palms, pushing from the middle outward into a round base. | "Squish it flat and round — push from the middle, like a little moon!" |
-| `kid-step-sauce.mp4` ✅(img) | Ladles red tomato sauce onto the base and swirls it round and round with the back of the spoon. | "Splat the sauce! Spread it round and round — leave a little edge!" |
+| `kid-step-mix.mp4` ✅ | Tips flour and water into a big bowl and stirs with a wooden spoon, a little flour puff. | "Tip it all in and give it a big mix — squish, squish, squish!" |
+| `kid-step-knead.mp4` ✅ | Pushes, folds and turns the dough on the bench with both hands, bouncy and fun. | "Now push it and fold it! Knead till it's smooth and bouncy!" |
+| `kid-step-puff.mp4` ✅ | Gestures to a bowl of dough that slowly rises/puffs up like a balloon; he watches, delighted. | "Let it rest and puff up big — like a balloon. Nighty-night, dough!" |
+| `kid-step-flatten.mp4` ✅ | Presses the dough ball flat with his palms, pushing from the middle outward into a round base. | "Squish it flat and round — push from the middle, like a little moon!" |
+| `kid-step-sauce.mp4` ✅ | Ladles red tomato sauce onto the base and swirls it round and round with the back of the spoon. | "Splat the sauce! Spread it round and round — leave a little edge!" |
 | `kid-step-cheese.mp4` ✅ | Sprinkles handfuls of grated cheese all over, snowing it down. | "Snow the cheese! Sprinkle it everywhere — yum yum yum!" |
-| `kid-step-oven.mp4` | Slides the pizza into the glowing wood-fired oven on a peel, then gives a thumbs up; a grown-up's hand could help. | "Into the hot oven — grab a grown-up! Then we wait for the magic." |
+| `kid-step-oven.mp4` ✅ | Slides the pizza into the glowing wood-fired oven on a peel, then gives a thumbs up; a grown-up's hand could help. | "Into the hot oven — grab a grown-up! Then we wait for the magic." |
 
-(✅ = already in the app; ✅(img) = currently a still image, a video would upgrade it.)
+(✅ = clip done & bundled in the app. **All cooking steps are now done.**)
 
 ---
 
@@ -56,7 +69,7 @@ flourish.
 |---|---|---|
 | `kid-topping-pepperoni.mp4` ✅ | Playfully tosses/flicks pepperoni circles onto the pizza, placing them in a ring. | "Pop on the pepperoni — spicy little circles of yum!" |
 | `kid-topping-ham.mp4` | Scatters torn pieces of ham across the pizza. | "Sprinkle the ham — yummy pink pillows!" |
-| `kid-topping-pineapple.mp4` | Drops little golden pineapple chunks on, winking cheekily. | "Pineapple time! Sweet and a little bit cheeky — no regrets!" |
+| `kid-topping-pineapple.mp4` ✅ | Drops little golden pineapple chunks on, winking cheekily. | "Pineapple time! Sweet and a little bit cheeky — no regrets!" |
 | `kid-topping-basil.mp4` | Gently places fresh green basil leaves, then a little flourish. | "A few green basil leaves — fancy! Smells amazing." |
 | `kid-topping-peppers.mp4` | Scatters colourful red, yellow and green pepper strips. | "Rainbow peppers — red, yellow, green! So crunchy." |
 | `kid-topping-sweetcorn.mp4` | Sprinkles a handful of yellow sweetcorn like little gold nuggets. | "Sprinkle the sweetcorn — pop, pop, pop, little gold bits!" |

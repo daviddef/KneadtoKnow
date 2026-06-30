@@ -48,7 +48,7 @@ struct KidModeView: View {
     @State private var steps: [KidStep] = []
     @State private var stepPage = 0
     @State private var burst = false
-    @State private var videosMuted = true   // one mute switch for every clip
+    @State private var videosMuted = false   // one mute switch for every clip (sound on by default)
 
     // Make-your-own selections
     @State private var bSauce = true
@@ -62,7 +62,7 @@ struct KidModeView: View {
             if burst { ConfettiView().ignoresSafeArea() }
         }
         .tint(Kid.tomato)
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = true; KidAudio.activate() }
     }
 
     @ViewBuilder private var content: some View {
@@ -303,13 +303,37 @@ struct KidModeView: View {
                     exitButton
                 }
 
+                Group {
+                    if VideoLoopView.exists("kid-choose") {
+                        KidVideo(resource: "kid-choose", muted: $videosMuted)
+                            .frame(height: 170).frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .id("kid-choose")
+                    } else if let p = pizza, let art = p.art {
+                        Image(art).resizable().scaledToFill()
+                            .frame(height: 170).frame(maxWidth: .infinity).clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                }
+
+                Text("How quickly do you need it?")
+                    .font(.rounded(26, weight: .bold)).foregroundStyle(Kid.tomatoDk)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                doughCard(.rightNow, bg: Kid.sunnySoft, ink: Color(red: 0.48, green: 0.31, blue: 0), pill: Kid.tomato, featured: true)
+                doughCard(.puffy, bg: Kid.grapeSoft, ink: Color(red: 0.29, green: 0.18, blue: 0.51), pill: Kid.grape, featured: false)
+
+                Text("pick one — you can always try the other next time!")
+                    .font(.rounded(12, weight: .medium)).foregroundStyle(Kid.inkSoft)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
                 if let p = pizza {
                     VStack(spacing: 0) {
                         if let art = p.art {
                             Image(art).resizable().scaledToFill()
-                                .frame(height: 120).frame(maxWidth: .infinity).clipped()
+                                .frame(height: 88).frame(maxWidth: .infinity).clipped()
                         } else {
-                            Text(p.emoji).font(.system(size: 46)).frame(height: 100).frame(maxWidth: .infinity)
+                            Text(p.emoji).font(.system(size: 40)).frame(height: 76).frame(maxWidth: .infinity)
                         }
                         HStack(spacing: 6) {
                             Text("Your pizza:").font(.rounded(13, weight: .medium)).foregroundStyle(Kid.inkSoft)
@@ -320,18 +344,8 @@ struct KidModeView: View {
                     }
                     .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Kid.sunnySoft))
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .padding(.top, 4)
                 }
-
-                Text("How shall we make it?")
-                    .font(.rounded(28, weight: .bold)).foregroundStyle(Kid.tomatoDk)
-                    .multilineTextAlignment(.leading)
-
-                doughCard(.rightNow, bg: Kid.sunnySoft, ink: Color(red: 0.48, green: 0.31, blue: 0), pill: Kid.tomato, featured: true)
-                doughCard(.puffy, bg: Kid.grapeSoft, ink: Color(red: 0.29, green: 0.18, blue: 0.51), pill: Kid.grape, featured: false)
-
-                Text("pick one — you can always try the other next time!")
-                    .font(.rounded(12, weight: .medium)).foregroundStyle(Kid.inkSoft)
-                    .frame(maxWidth: .infinity, alignment: .center)
             }
             .padding(18)
         }
@@ -339,23 +353,22 @@ struct KidModeView: View {
 
     private func doughCard(_ d: KidDough, bg: Color, ink: Color, pill: Color, featured: Bool) -> some View {
         Button { Haptics.tap(); startCooking(d) } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                if featured {
-                    Text("fastest!").font(.rounded(11, weight: .bold)).foregroundStyle(.white)
-                        .padding(.horizontal, 9).padding(.vertical, 3)
-                        .background(Capsule().fill(Kid.tomato))
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
+                    Text("\(d.emoji) \(d.title)").font(.rounded(25, weight: .bold)).foregroundStyle(ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 4)
+                    Text("⏱️ \(d.time)").font(.rounded(15, weight: .bold)).foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Capsule().fill(pill))
                 }
-                Text("\(d.emoji) \(d.title)").font(.rounded(24, weight: .bold)).foregroundStyle(ink)
-                Text(d.blurb).font(.rounded(16)).foregroundStyle(ink.opacity(0.85))
+                Text(d.blurb).font(.rounded(15)).foregroundStyle(ink.opacity(0.85))
                     .fixedSize(horizontal: false, vertical: true)
-                Text("⏱️ ready in \(d.time)").font(.rounded(18, weight: .bold)).foregroundStyle(.white)
-                    .padding(.horizontal, 14).padding(.vertical, 7)
-                    .background(Capsule().fill(pill)).padding(.top, 6)
-                Text(d.flow).font(.rounded(18, weight: .bold)).foregroundStyle(ink).padding(.top, 8)
+                Text(d.flow).font(.rounded(18, weight: .bold)).foregroundStyle(ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
+            .padding(18)
             .background(RoundedRectangle(cornerRadius: 20).fill(bg))
             .overlay(RoundedRectangle(cornerRadius: 20).stroke(featured ? Kid.tomato : .clear, lineWidth: 3))
         }

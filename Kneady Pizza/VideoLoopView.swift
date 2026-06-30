@@ -57,35 +57,63 @@ struct VideoLoopView: UIViewRepresentable {
 }
 
 final class LoopingPlayerUIView: UIView {
-    private var queue: AVQueuePlayer?
-    private var looper: AVPlayerLooper?
+    private var player: AVPlayer?
     private let playerLayer = AVPlayerLayer()
     private var active = true
+    private var endObserver: NSObjectProtocol?
+    private var restartWork: DispatchWorkItem?
+
+    /// Seconds to hold on the last frame before looping again.
+    private let loopGap: TimeInterval = 15
 
     init(resource: String) {
         super.init(frame: .zero)
         backgroundColor = .clear
         guard let url = Bundle.main.url(forResource: resource, withExtension: "mp4") else { return }
         let item = AVPlayerItem(url: url)
-        let q = AVQueuePlayer()
-        q.isMuted = true
-        looper = AVPlayerLooper(player: q, templateItem: item)
-        playerLayer.player = q
+        let p = AVPlayer(playerItem: item)
+        p.isMuted = true
+        p.actionAtItemEnd = .pause   // hold the last frame; we restart after a gap
+        playerLayer.player = p
         playerLayer.videoGravity = .resizeAspectFill
         layer.addSublayer(playerLayer)
-        queue = q
-        q.play()
+        player = p
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main
+        ) { [weak self] _ in self?.scheduleRestart() }
+        p.play()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func setMuted(_ muted: Bool) { queue?.isMuted = muted }
+    private func scheduleRestart() {
+        restartWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.active else { return }
+            self.player?.seek(to: .zero)
+            self.player?.play()
+        }
+        restartWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + loopGap, execute: work)
+    }
+
+    func setMuted(_ muted: Bool) { player?.isMuted = muted }
 
     /// Play only the active page; pause (freeze the frame) otherwise.
     func setActive(_ isActive: Bool) {
         guard isActive != active else { return }
         active = isActive
-        if isActive { queue?.play() } else { queue?.pause() }
+        if isActive {
+            // If it had finished, restart from the top; otherwise resume.
+            if let item = player?.currentItem, item.duration.seconds.isFinite,
+               item.currentTime().seconds >= item.duration.seconds - 0.1 {
+                player?.seek(to: .zero)
+            }
+            player?.play()
+        } else {
+            player?.pause()
+            restartWork?.cancel()
+        }
     }
 
     override func layoutSubviews() {
@@ -93,5 +121,9 @@ final class LoopingPlayerUIView: UIView {
         playerLayer.frame = bounds
     }
 
-    deinit { queue?.pause() }
+    deinit {
+        player?.pause()
+        restartWork?.cancel()
+        if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
+    }
 }
