@@ -15,6 +15,45 @@ struct MenuDrawer: View {
         Binding(get: { vm.currentPersona }, set: { vm.applyPersona($0) })
     }
 
+    /// A mini tile for one persona in the MODE picker — icon, name and a one-word
+    /// hint, so the four modes read as distinct choices rather than a text pill row.
+    private func personaTile(_ persona: Experience) -> some View {
+        let isOn = persona == personaBinding.wrappedValue
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                personaBinding.wrappedValue = persona
+            }
+            Haptics.select()
+        } label: {
+            VStack(spacing: 3) {
+                Text(persona.emoji)
+                    .font(.system(size: 22))
+                Text(persona.shortLabel)
+                    .font(.rounded(12, weight: isOn ? .bold : .semibold))
+                    .foregroundStyle(isOn ? .white : Palette.text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Text(persona.subtitle)
+                    .font(.rounded(9))
+                    .foregroundStyle(isOn ? .white.opacity(0.85) : Palette.textSoft)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .fill(isOn ? Palette.accentFill : AnyShapeStyle(Palette.well))
+                    .shadow(color: isOn ? Palette.accent.opacity(0.35) : .clear, radius: 6, y: 3)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .stroke(isOn ? Color.clear : Palette.shadowDark.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -24,7 +63,11 @@ struct MenuDrawer: View {
                         Text("MODE")
                             .font(.rounded(12, weight: .bold))
                             .foregroundStyle(Palette.textSoft)
-                        TactileSegmented(options: Experience.allCases, selection: personaBinding) { $0.shortLabel }
+                        HStack(spacing: 8) {
+                            ForEach(Experience.allCases) { persona in
+                                personaTile(persona)
+                            }
+                        }
                         Text("Kid is a big, fun game for children · Villager & Pizzaiolo keep it simple · Roman gives full control.")
                             .font(.rounded(11))
                             .foregroundStyle(Palette.textSoft)

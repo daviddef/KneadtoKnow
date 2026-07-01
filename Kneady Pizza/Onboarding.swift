@@ -34,7 +34,7 @@ enum Experience: Int, CaseIterable, Identifiable {
     /// Short label for the mode picker in the menu.
     var shortLabel: String {
         switch self {
-        case .kid:       return "🧒 Kid"
+        case .kid:       return "Kid"
         case .villager:  return "Villager"
         case .pizzaiolo: return "Pizzaiolo"
         case .roman:     return "Roman"
