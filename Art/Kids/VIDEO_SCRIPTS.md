@@ -7,16 +7,16 @@ and I'll bundle + compress them.
 
 ## Status (as of build 37)
 
-**Done ✅ (14):** kid-hero-toss · kid-choose · kid-celebrate · kid-step-mix ·
+**Done ✅ (16):** kid-hero-toss · kid-choose · kid-celebrate · kid-step-mix ·
 kid-step-knead · kid-step-puff · kid-step-flatten · kid-step-sauce · kid-step-cheese ·
 kid-step-oven · kid-topping-pepperoni · kid-topping-pineapple · kid-topping-basil ·
-kid-topping-ham
+kid-topping-ham · kid-topping-mushroom · kid-topping-nutella
 
 → **Hero, dough-choice, every cooking step, and the celebration are done.**
-Four toppings done (pepperoni, pineapple, basil, ham).
+Six toppings done (pepperoni, pineapple, basil, ham, mushroom, nutella).
 
 **Still to make:**
-- Toppings: peppers, sweetcorn, mushroom, olives, nutella, banana,
+- Toppings: peppers, sweetcorn, olives, banana,
   chicken, plant pepperoni, beans
 - Optional: pizza-tile loops
 
@@ -78,9 +78,9 @@ flourish.
 | `kid-topping-basil.mp4` ✅ | Gently places fresh green basil leaves, then a little flourish. | "A few green basil leaves — fancy! Smells amazing." |
 | `kid-topping-peppers.mp4` | Scatters colourful red, yellow and green pepper strips. | "Rainbow peppers — red, yellow, green! So crunchy." |
 | `kid-topping-sweetcorn.mp4` | Sprinkles a handful of yellow sweetcorn like little gold nuggets. | "Sprinkle the sweetcorn — pop, pop, pop, little gold bits!" |
-| `kid-topping-mushroom.mp4` | Lays thin mushroom slices around the pizza. | "Add the mushrooms — little umbrellas for your pizza!" |
+| `kid-topping-mushroom.mp4` ✅ | Lays thin mushroom slices around the pizza. | "Add the mushrooms — little umbrellas for your pizza!" |
 | `kid-topping-olives.mp4` | Dots black olive halves around like a game of dot-to-dot. | "Olives! Pop them on like little dots — one, two, three!" |
-| `kid-topping-nutella.mp4` | Spreads big glossy spoonfuls of Nutella over a (baked, plain) base, swirling. | "Spoon on the Nutella — chocolatey and gooey. Mmm!" |
+| `kid-topping-nutella.mp4` ✅ | Spreads big glossy spoonfuls of Nutella over a (baked, plain) base, swirling. | "Spoon on the Nutella — chocolatey and gooey. Mmm!" |
 | `kid-topping-banana.mp4` | Lays banana coins on top of the Nutella in a smiley pattern. | "Banana coins on top — make a happy face!" |
 | `kid-topping-chicken.mp4` | Scatters cooked chicken pieces evenly. | "Add the chicken — yummy and filling!" |
 | `kid-topping-plant-pepperoni.mp4` | Places plant-pepperoni circles in a ring, gives a leafy thumbs up. | "Plant pepperoni — veggie and delicious. High five!" |
