@@ -65,6 +65,9 @@ final class LoopingPlayerUIView: UIView {
 
     /// Seconds to hold on the last frame before looping again.
     private let loopGap: TimeInterval = 15
+    /// Loop once (play twice total), then hold the final frame for good.
+    private let maxPlays = 2
+    private var playCount = 1
 
     init(resource: String) {
         super.init(frame: .zero)
@@ -87,9 +90,11 @@ final class LoopingPlayerUIView: UIView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     private func scheduleRestart() {
+        guard playCount < maxPlays else { return }   // played twice already — stay on the last frame
         restartWork?.cancel()
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.active else { return }
+            self.playCount += 1
             self.player?.seek(to: .zero)
             self.player?.play()
         }
@@ -104,9 +109,11 @@ final class LoopingPlayerUIView: UIView {
         guard isActive != active else { return }
         active = isActive
         if isActive {
-            // If it had finished, restart from the top; otherwise resume.
-            if let item = player?.currentItem, item.duration.seconds.isFinite,
+            // If it had finished and hasn't hit the play cap, restart from the top.
+            if playCount < maxPlays,
+               let item = player?.currentItem, item.duration.seconds.isFinite,
                item.currentTime().seconds >= item.duration.seconds - 0.1 {
+                playCount += 1
                 player?.seek(to: .zero)
             }
             player?.play()
