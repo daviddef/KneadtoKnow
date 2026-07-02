@@ -98,12 +98,16 @@ enum Experience: Int, CaseIterable, Identifiable {
     }
 }
 
-/// First-run flow: an animated splash asks the one big question — which mode?
-/// — then hands off to the existing setup screen (oven, look, reminders,
-/// location), now tailored to that choice, before dropping into the app.
+/// The launch gate: an animated splash asks the one big question — which
+/// mode? — on every cold launch. First run hands off to the full setup
+/// screen (oven, look, reminders, location) tailored to that choice.
+/// Returning users just confirm/switch their mode and drop straight in.
 struct OnboardingView: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
+    /// Forces the full setup screen even if onboarding was already completed
+    /// once — set when the user taps "Set me up again" in Settings.
+    var forceFullSetup: Bool = false
     var onDone: () -> Void
 
     private enum Phase { case splash, setup }
@@ -118,6 +122,8 @@ struct OnboardingView: View {
     @State private var showTiles = false
     @State private var bounce = false
 
+    private var needsFullSetup: Bool { !OnboardingStore.completed || forceFullSetup }
+
     private func personaColor(_ persona: Experience) -> Color {
         switch persona.color {
         case .beginner: return Palette.sage
@@ -127,9 +133,15 @@ struct OnboardingView: View {
     }
 
     private func choose(_ persona: Experience) {
-        Haptics.select()
-        self.persona = persona
-        withAnimation(.easeInOut(duration: 0.35)) { phase = .setup }
+        if needsFullSetup {
+            Haptics.select()
+            self.persona = persona
+            withAnimation(.easeInOut(duration: 0.35)) { phase = .setup }
+        } else {
+            Haptics.success()
+            vm.applyPersona(persona)
+            onDone()
+        }
     }
 
     var body: some View {
@@ -166,17 +178,19 @@ struct OnboardingView: View {
             question
             Spacer(minLength: 12)
 
-            Button {
-                OnboardingStore.completed = true
-                onDone()
-            } label: {
-                Text("Skip — I'll set it up myself")
-                    .font(.rounded(12, weight: .medium))
-                    .foregroundStyle(Palette.textSoft)
+            if needsFullSetup {
+                Button {
+                    OnboardingStore.completed = true
+                    onDone()
+                } label: {
+                    Text("Skip — I'll set it up myself")
+                        .font(.rounded(12, weight: .medium))
+                        .foregroundStyle(Palette.textSoft)
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 18)
+                .opacity(showTiles ? 1 : 0)
             }
-            .buttonStyle(.plain)
-            .padding(.bottom, 18)
-            .opacity(showTiles ? 1 : 0)
         }
         .transition(.asymmetric(
             insertion: .opacity,
@@ -231,7 +245,9 @@ struct OnboardingView: View {
             Text("How do you like to cook?")
                 .font(.rounded(21, weight: .bold))
                 .foregroundStyle(Palette.text)
-            Text("Pick a mode — next you'll set your oven, look and reminders.")
+            Text(needsFullSetup
+                 ? "Pick a mode — next you'll set your oven, look and reminders."
+                 : "Tap your mode to jump in — or switch to something new.")
                 .font(.rounded(12))
                 .foregroundStyle(Palette.textSoft)
                 .multilineTextAlignment(.center)
@@ -254,7 +270,8 @@ struct OnboardingView: View {
     }
 
     private func modeCard(_ persona: Experience) -> some View {
-        Button {
+        let isCurrent = !needsFullSetup && persona == vm.currentPersona
+        return Button {
             choose(persona)
         } label: {
             HStack(spacing: 14) {
@@ -273,9 +290,17 @@ struct OnboardingView: View {
                         .foregroundStyle(personaColor(persona))
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.rounded(13, weight: .bold))
-                    .foregroundStyle(Palette.textSoft.opacity(0.6))
+                if isCurrent {
+                    Text("CURRENT")
+                        .font(.rounded(10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 9).padding(.vertical, 4)
+                        .background(Capsule().fill(personaColor(persona)))
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.rounded(13, weight: .bold))
+                        .foregroundStyle(Palette.textSoft.opacity(0.6))
+                }
             }
             .padding(14)
             .background(
@@ -284,7 +309,7 @@ struct OnboardingView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(personaColor(persona).opacity(0.35), lineWidth: 1.5)
+                    .stroke(personaColor(persona).opacity(isCurrent ? 0.9 : 0.35), lineWidth: isCurrent ? 2.5 : 1.5)
             )
             .shadow(color: Palette.shadowDark, radius: 8, x: 5, y: 5)
             .shadow(color: Palette.shadowLight, radius: 8, x: -5, y: -5)

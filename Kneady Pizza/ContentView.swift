@@ -35,8 +35,13 @@ struct ContentView: View {
     @State private var menuOpen = false
     /// Card keys that are collapsed. Recipe proportions starts collapsed.
     @State private var collapsed: Set<String> = ["proportions"]
-    /// First-run setup, shown until completed.
-    @State private var showOnboarding = !OnboardingStore.completed
+    /// The launch splash + mode gate — shown on every cold launch. First-run
+    /// picks flow into the full oven/look/reminders setup; returning users
+    /// just re-pick (or confirm) their mode and drop straight into the app.
+    @State private var showOnboarding = true
+    /// Set by "Set me up again" in Settings — forces the full setup screen
+    /// even though onboarding was already completed once.
+    @State private var forceFullOnboardingSetup = false
     /// The one-time feature walkthrough (also re-openable from Guides).
     @State private var showWalkthrough = false
     /// The occasional floating popup — a coaching tip or a pizza joke.
@@ -69,14 +74,26 @@ struct ContentView: View {
     private let clockTimer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        if vm.kidMode {
-            KidModeView(vm: vm)
-        } else if vSize == .compact {
-            LandscapeStepsView(vm: vm,
-                               completed: $completedSteps,
-                               onToggle: { toggleStepDone($0) })
-        } else {
-            portraitContent
+        Group {
+            if vm.kidMode {
+                KidModeView(vm: vm)
+            } else if vSize == .compact {
+                LandscapeStepsView(vm: vm,
+                                   completed: $completedSteps,
+                                   onToggle: { toggleStepDone($0) })
+            } else {
+                portraitContent
+            }
+        }
+        // Applied at the top level (not nested under portraitContent) so the
+        // launch gate always has a chance to show, even when Kid Mode or
+        // landscape cooking mode is what actually renders underneath.
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(vm: vm, forceFullSetup: forceFullOnboardingSetup, onDone: {
+                showOnboarding = false
+                forceFullOnboardingSetup = false
+                maybeShowWalkthrough()
+            })
         }
     }
 
@@ -274,9 +291,6 @@ struct ContentView: View {
                 PriceListView()
             }
         }
-        .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView(vm: vm, onDone: { showOnboarding = false; maybeShowWalkthrough() })
-        }
         .sheet(isPresented: $showWalkthrough) {
             WalkthroughView()
         }
@@ -470,7 +484,10 @@ struct ContentView: View {
                 MenuDrawer(vm: vm, onClose: { closeMenu() },
                            onReintro: {
                                closeMenu()
-                               DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showOnboarding = true }
+                               DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                   forceFullOnboardingSetup = true
+                                   showOnboarding = true
+                               }
                            })
                     .frame(maxWidth: 380)
                     .frame(maxHeight: .infinity)
