@@ -1,7 +1,7 @@
 # Kneady Pizza — App Store submission pack
 
 App: **Kneady Pizza** · Bundle ID `com.daviddefranceski.kneadypizza` · Team `L9SAXP2E2W`
-Version **1.1** · Build **38+** (iPhone-only, bump past 37 before archiving — see §4) · Primary language: English (Australia or US — pick one below)
+Version **1.1** · Build **38** (iPhone-only) · Primary language: English (Australia or US — pick one below)
 
 ---
 
@@ -125,11 +125,9 @@ Answer the questionnaire:
 
 ## 4. Build, pricing, availability
 
-- **Build:** the last CLI archive/upload was **1.1 (37)** — but several commits landed *after* that
-  (mini-tile mode picker, video loop cap, mushroom/nutella/banana/peppers topping videos) that build 37
-  doesn't contain, and TestFlight rejects re-uploading a duplicate build number anyway. **Bump
-  `CURRENT_PROJECT_VERSION` to 38**, re-run the CLI archive (see the workflow doc in memory, or ask
-  Claude — same command as every prior build), upload it, then select **1.1 (38)** here once it finishes
+- **Build:** **1.1 (38)** — archived 2 Jul 2026, contains the mini-tile mode picker, video loop cap, and
+  mushroom/nutella/banana/peppers topping videos that build 37 was missing. Upload it from Organizer
+  (Distribute App → TestFlight & App Store → Upload), then select **1.1 (38)** here once it finishes
   processing (watch for the email).
 - **Price:** Free (Tier 0) unless you intend to charge.
 - **Availability:** all territories (or restrict if you like).
@@ -158,13 +156,13 @@ Answer the questionnaire:
 3. Landscape cooking mode — one big step (the standout feature).
 4. Pizza & topping planner — the shopping list.
 5. A proof choice / setup screen (Quick / Cold / Warm).
-6. Kid Mode — the "Pick your pizza!" screen.
-7. Kid Mode — a big animated step (with video).
-8. The MODE picker in the menu (Kid / Villager / Pizzaiolo / Roman tiles).
+6. Kid Mode — the "Pick your pizza!" screen. → `appstore/screenshots/kid-1-pick.png`
+7. Kid Mode — "How quickly do you need it?" dough choice. → `appstore/screenshots/kid-2-choose-dough.png`
+8. Kid Mode — a big animated step (with video). → `appstore/screenshots/kid-3-mix.png`
 
-> `appstore/screenshots/kid-1-pick.png`, `kid-2-choose-dough.png`, `kid-3-mix.png` were captured 28 Jun
-> and are now stale — the UI has since changed (bigger dough cards, step videos, mini-tile mode
-> picker). Recapture before uploading.
+> `appstore/screenshots/kid-4-mode-picker.png` (the MODE tile picker in the menu) is also available as
+> a bonus/optional 9th shot. All four were recaptured 2 Jul 2026 at 1242×2688 against build 38 — current
+> with the latest Kid Mode UI.
 
 **How to capture (easiest, correct resolution):**
 1. Open the project in Xcode → run on **iPhone 17 Pro Max** simulator (6.9"). The app is iPhone-only, so no iPad capture is needed.
@@ -183,8 +181,8 @@ Ask Claude to drive the simulator and capture the full set if you'd rather not d
 2. If there's no 1.1 version yet: **(＋) next to "iOS App" → create version 1.1**.
 3. Fill **App Information** (section 1) — name, subtitle, categories, content rights (unchanged since 1.0, but check they're still correct).
 4. In the **1.1 version page** fill: promotional text, description, keywords, what's new, support/marketing/privacy URLs, copyright (section 2).
-5. Upload **screenshots** (section 6) to each required size slot — including fresh Kid Mode shots.
-6. **Build:** cut a fresh build first (see the ⚠️ note in section 4 — build 37 is stale), then scroll to "Build", click **(＋)**, choose **1.1 (38)** once it's finished processing. (Answer export-compliance if prompted — it won't be, given the plist flag.)
+5. Upload **screenshots** (section 6) to each required size slot — `appstore/screenshots/kid-*.png` are ready.
+6. **Build:** upload **1.1 (38)** from Organizer if you haven't already, then scroll to "Build", click **(＋)**, choose **1.1 (38)** once it's finished processing. (Answer export-compliance if prompted — it won't be, given the plist flag.)
 7. **App Privacy** (section 3) — re-check the questionnaire is still accurate (no new data collection in 1.1) and **Publish**.
 8. Set **Pricing and Availability** (section 4).
 9. **App Review Information** (section 5) — make sure the Kid Mode note is included.

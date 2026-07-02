@@ -21,25 +21,17 @@ OTHER FIELDS (no paste needed)
 - Primary category: Food & Drink   | Secondary (optional): Lifestyle
 - Age rating: 4+  (answer "None" to every content question)
 - Price: Free (Tier 0)
-- Build to attach: 1.1 (38+)   (iPhone-only) — see note below, NOT build 37
+- Build to attach: 1.1 (38)   (iPhone-only) — archived 2 Jul 2026, upload it and select it here
 - Export compliance: not asked (ITSAppUsesNonExemptEncryption = NO)
-
-⚠️ BUILD NUMBER — READ BEFORE SUBMITTING
-The last CLI archive/upload was 1.1 build 37. Several commits landed after
-that (mini-tile mode picker, video loop cap, mushroom/nutella/banana/peppers
-topping videos) that build 37 does NOT contain. Bump CURRENT_PROJECT_VERSION
-to 38, re-run the CLI archive (see kneady-pizza-release-workflow memory /
-APP_STORE_SUBMISSION.md), upload it, then select THAT build in App Store
-Connect — TestFlight also rejects re-uploading a duplicate build number.
 
 SCREENSHOTS
 - iPhone 6.9" (1320x2868) or 6.7" (1290x2796); 6.5" (1242x2688) also accepted.
 - iPhone-only app -> no iPad screenshots needed.
 - Capture in the iPhone 17 Pro Max simulator: Cmd+S saves a correct-size PNG;
   Cmd+Left rotates for the landscape cooking-mode shot.
-- screenshots/kid-1-pick.png, kid-2-choose-dough.png, kid-3-mix.png were
-  captured 28 Jun and are now STALE — Kid Mode's UI has changed a lot since
-  (bigger dough cards, step videos, mini-tile mode picker). Recapture before
-  uploading, or ask Claude to grab fresh ones from the simulator.
+- screenshots/kid-1-pick.png, kid-2-choose-dough.png, kid-3-mix.png,
+  kid-4-mode-picker.png were recaptured 2 Jul 2026 at 1242x2688 against
+  build 38 — current with the latest Kid Mode UI (bigger dough cards, step
+  videos, mini-tile mode picker).
 
 Full walkthrough: ../APP_STORE_SUBMISSION.md  (section 7 is click-by-click)
