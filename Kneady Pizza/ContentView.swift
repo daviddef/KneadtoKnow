@@ -75,7 +75,12 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if vm.kidMode {
+            // Hold off mounting the real content — including Kid Mode's
+            // auto-playing videos — until the launch gate has dismissed, so
+            // nothing plays (or is heard) underneath the cover.
+            if showOnboarding {
+                Palette.background.ignoresSafeArea()
+            } else if vm.kidMode {
                 KidModeView(vm: vm)
             } else if vSize == .compact {
                 LandscapeStepsView(vm: vm,

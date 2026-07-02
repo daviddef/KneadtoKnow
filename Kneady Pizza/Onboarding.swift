@@ -64,6 +64,15 @@ enum Experience: Int, CaseIterable, Identifiable {
         case .roman:     return .advanced
         }
     }
+    /// A one-line description for the mode-picker cards.
+    var blurb: String {
+        switch self {
+        case .kid:       return "Huge steps, jokes and confetti — cook together with the kids."
+        case .villager:  return "Simple, friendly defaults with lots of tips — great to start out."
+        case .pizzaiolo: return "Still simple, with a bit more character and balance."
+        case .roman:     return "Full control of every number, for confident bakers."
+        }
+    }
     var summary: [String] {
         switch self {
         case .kid:
@@ -118,11 +127,22 @@ struct OnboardingView: View {
     @State private var wantsReminders = true
     @State private var wantsLocation = true
 
-    @State private var showHero = false
+    // Staged entrance: pizza spins in first, then the name, then the cards.
+    @State private var showPizza = false
+    @State private var spinDegrees: Double = 0
+    @State private var pizzaScale: CGFloat = 0.3
+    @State private var steaming = false
+    @State private var showTitle = false
     @State private var showTiles = false
     @State private var bounce = false
 
     private var needsFullSetup: Bool { !OnboardingStore.completed || forceFullSetup }
+
+    /// Which mode is pre-highlighted: your saved favourite/last mode if you
+    /// have one, else a friendly Villager default for a genuinely fresh start.
+    private var defaultPersona: Experience {
+        (FavouriteStore.load() != nil || OnboardingStore.completed) ? vm.currentPersona : .villager
+    }
 
     private func personaColor(_ persona: Experience) -> Color {
         switch persona.color {
@@ -162,9 +182,23 @@ struct OnboardingView: View {
             oven = vm.input.oven
             wantsReminders = vm.notificationsEnabled
 
-            withAnimation(.easeOut(duration: 0.55)) { showHero = true }
-            withAnimation(.easeOut(duration: 0.4).delay(0.3)) { showTiles = true }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { bounce = true }
+            // Stage 1 — the pizza pops in, spins twice and steams.
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.55)) {
+                showPizza = true
+                pizzaScale = 1.0
+            }
+            withAnimation(.easeOut(duration: 0.9)) { spinDegrees = 720 }
+            steaming = true
+
+            // Stage 2 — the name settles in as the spin winds down.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                withAnimation(.easeOut(duration: 0.5)) { showTitle = true }
+                withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { bounce = true }
+            }
+            // Stage 3 — the mode cards fade in, staggered.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                withAnimation(.easeOut(duration: 0.4)) { showTiles = true }
+            }
         }
     }
 
@@ -222,22 +256,48 @@ struct OnboardingView: View {
 
     private var hero: some View {
         VStack(spacing: 8) {
-            Text("🍕")
-                .font(.system(size: 88))
-                .rotationEffect(.degrees(bounce ? 8 : -8))
-                .scaleEffect(bounce ? 1.05 : 0.95)
-                .shadow(color: Palette.accent.opacity(0.3), radius: 22, y: 12)
+            ZStack {
+                steamWisps
+                Text("🍕")
+                    .font(.system(size: 88))
+                    .rotationEffect(.degrees(spinDegrees + (bounce ? 8 : -8)))
+                    .scaleEffect(pizzaScale)
+                    .shadow(color: Palette.accent.opacity(0.3), radius: 22, y: 12)
+            }
+            .opacity(showPizza ? 1 : 0)
 
             Text("Kneady Pizza")
                 .font(.rounded(32, weight: .heavy))
                 .foregroundStyle(Palette.text)
+                .opacity(showTitle ? 1 : 0)
+                .offset(y: showTitle ? 0 : 10)
 
             Text("Great dough, perfectly timed.")
                 .font(.rounded(15, weight: .medium))
                 .foregroundStyle(Palette.textSoft)
+                .opacity(showTitle ? 1 : 0)
+                .offset(y: showTitle ? 0 : 10)
         }
-        .opacity(showHero ? 1 : 0)
-        .offset(y: showHero ? 0 : 14)
+    }
+
+    /// Rising, fading wisps above the pizza — sells "hot out of the oven."
+    private var steamWisps: some View {
+        ZStack {
+            ForEach(0..<3, id: \.self) { i in
+                Capsule()
+                    .fill(Palette.textSoft.opacity(0.28))
+                    .frame(width: 9, height: 20)
+                    .blur(radius: 4)
+                    .offset(x: [-16, 0, 16][i], y: steaming ? -72 : -30)
+                    .opacity(steaming ? 0 : 0.65)
+                    .animation(
+                        .easeOut(duration: 1.7).repeatForever(autoreverses: false).delay(Double(i) * 0.5),
+                        value: steaming
+                    )
+            }
+        }
+        .offset(y: -46)
+        .allowsHitTesting(false)
     }
 
     private var question: some View {
@@ -266,11 +326,12 @@ struct OnboardingView: View {
             .padding(.top, 4)
         }
         .padding(.horizontal, 24)
-        .opacity(showHero ? 1 : 0)
+        .opacity(showTiles ? 1 : 0)
+        .offset(y: showTiles ? 0 : 10)
     }
 
     private func modeCard(_ persona: Experience) -> some View {
-        let isCurrent = !needsFullSetup && persona == vm.currentPersona
+        let isCurrent = persona == defaultPersona
         return Button {
             choose(persona)
         } label: {
@@ -280,7 +341,7 @@ struct OnboardingView: View {
                     .frame(width: 52, height: 52)
                     .background(Circle().fill(personaColor(persona).opacity(0.18)))
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(persona.title)
                         .font(.rounded(16, weight: .bold))
                         .foregroundStyle(Palette.text)
@@ -288,14 +349,20 @@ struct OnboardingView: View {
                     Text(persona.subtitle)
                         .font(.rounded(12, weight: .semibold))
                         .foregroundStyle(personaColor(persona))
+                    Text(persona.blurb)
+                        .font(.rounded(11))
+                        .foregroundStyle(Palette.textSoft)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
+                Spacer(minLength: 8)
                 if isCurrent {
-                    Text("CURRENT")
+                    Text(OnboardingStore.completed ? "CURRENT" : "SUGGESTED")
                         .font(.rounded(10, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 9).padding(.vertical, 4)
                         .background(Capsule().fill(personaColor(persona)))
+                        .fixedSize()
                 } else {
                     Image(systemName: "chevron.right")
                         .font(.rounded(13, weight: .bold))
