@@ -1,1 +1,14 @@
-The first release of Kneady Pizza. Plan any pizza dough from baker's percentages, timed around when you want to eat — with a hands-free landscape cooking mode, a topping & shopping planner, and gluten-free support. Buon appetito!
+Introducing Kid Mode — a big, fun, mess-and-giggles way to make pizza together!
+
+• Pick a pizza (Hawaiian, Margherita, Dino Pepperoni and more) or build your own and save it.
+• Choose your dough: "Right now!" (ready in about 30 minutes) or "Puffy & bouncy".
+• One giant, animated step at a time in kid words — cups and spoons, with grams for grown-ups.
+• Jokes, confetti and cheering the whole way, with a grown-up hand-off for the hot oven.
+
+Also in this update:
+• A fresh MODE picker — Kid, Villager, Pizzaiolo or Roman — sets how simple or detailed the app feels.
+• Reminders now only ping once you've actually started baking.
+• The style picker locks while a bake is underway, so you don't lose your place.
+• Tap any cooking step to read it full-screen, swipe between steps, and see timing notes in a big clock pill.
+
+Buon appetito! 🍕
