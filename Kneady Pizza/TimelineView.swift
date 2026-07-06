@@ -14,13 +14,16 @@ struct TimelineView: View {
     var onToggleDone: (Int) -> Void = { _ in }
     /// Tap a step to read it full-screen (passes its index).
     var onExpand: (Int) -> Void = { _ in }
+    /// Off for Villager — no clock times or day dividers, just how far into
+    /// the plan each step falls.
+    var showClockTimes: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(schedule.steps.enumerated()), id: \.element.id) { idx, step in
                 let isLast = idx == schedule.steps.count - 1
                 let done = completed.contains(idx)
-                let dayChanged = idx > 0 && !Calendar.current.isDate(step.time, inSameDayAs: schedule.steps[idx - 1].time)
+                let dayChanged = showClockTimes && idx > 0 && !Calendar.current.isDate(step.time, inSameDayAs: schedule.steps[idx - 1].time)
                 VStack(alignment: .leading, spacing: 0) {
                     if dayChanged { dayDivider(step.time) }
                     HStack(alignment: .top, spacing: 14) {
@@ -63,8 +66,10 @@ struct TimelineView: View {
                             .buttonStyle(.plain)
                             Spacer()
                             HStack(spacing: 3) {
-                                Image(systemName: "clock")
-                                Text(Scheduler.timeOnly(step.time))
+                                Image(systemName: showClockTimes ? "clock" : "hourglass")
+                                Text(showClockTimes
+                                     ? Scheduler.timeOnly(step.time)
+                                     : Scheduler.elapsed(step.time, since: schedule.start))
                             }
                             .font(.rounded(13, weight: .medium))
                             .foregroundStyle(Palette.accent)
@@ -186,9 +191,10 @@ struct TimelineView: View {
     }
 
     /// Labels a rest with where it happens, and whether it spans the night.
+    /// Villager doesn't track clock times, so there's no "overnight" to call out.
     private func leadLabel(for step: ScheduleStep) -> String {
         var label = "\(Scheduler.duration(step.leadHours)) \(step.restLocation.phrase)"
-        if spansNight(from: step.time, hours: step.leadHours) {
+        if showClockTimes && spansNight(from: step.time, hours: step.leadHours) {
             label += " · overnight (you sleep)"
         }
         return label

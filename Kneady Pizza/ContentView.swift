@@ -306,7 +306,8 @@ struct ContentView: View {
                           metric: vm.metric,
                           now: vm.now,
                           completed: $completedSteps,
-                          onToggle: { toggleStepDone($0) })
+                          onToggle: { toggleStepDone($0) },
+                          showClockTimes: vm.currentPersona != .villager)
         }
         .confirmationDialog("Finished cooking?", isPresented: $confirmCancelBake, titleVisibility: .visible) {
             Button("Yes, all done") {
@@ -1271,23 +1272,33 @@ struct ContentView: View {
 
     /// "Start … · total" plus the "too tight" warning. Pass `info` to tuck an
     /// info button onto the end of the line (used by the chrome-free simple card).
+    /// Villager shows a duration only — no clock times, since it doesn't track
+    /// wall-clock or accommodate sleep.
     @ViewBuilder private func startSummaryLine(info: InfoTopic? = nil) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "play.circle.fill")
                 .foregroundStyle(Palette.sage)
-            Text("Start")
-                .foregroundStyle(Palette.textSoft)
-            Text(Scheduler.clock(vm.schedule.start, now: vm.now))
-                .font(.rounded(15, weight: .semibold))
-                .foregroundStyle(Palette.text)
-            Image(systemName: "arrow.right")
-                .font(.rounded(12, weight: .semibold))
-                .foregroundStyle(Palette.textSoft)
-            Text("Ready")
-                .foregroundStyle(Palette.textSoft)
-            Text(Scheduler.clock(vm.schedule.serve, now: vm.now))
-                .font(.rounded(15, weight: .semibold))
-                .foregroundStyle(Palette.accent)
+            if vm.currentPersona == .villager {
+                Text("Ready in about")
+                    .foregroundStyle(Palette.textSoft)
+                Text(Scheduler.duration(vm.schedule.totalHours))
+                    .font(.rounded(15, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+            } else {
+                Text("Start")
+                    .foregroundStyle(Palette.textSoft)
+                Text(Scheduler.clock(vm.schedule.start, now: vm.now))
+                    .font(.rounded(15, weight: .semibold))
+                    .foregroundStyle(Palette.text)
+                Image(systemName: "arrow.right")
+                    .font(.rounded(12, weight: .semibold))
+                    .foregroundStyle(Palette.textSoft)
+                Text("Ready")
+                    .foregroundStyle(Palette.textSoft)
+                Text(Scheduler.clock(vm.schedule.serve, now: vm.now))
+                    .font(.rounded(15, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+            }
             Spacer(minLength: 4)
             if let info {
                 Button { showInfo(info); Haptics.tap() } label: {
@@ -1385,7 +1396,8 @@ struct ContentView: View {
                          metric: vm.metric,
                          completed: completedSteps,
                          onToggleDone: { toggleStepDone($0) },
-                         onExpand: { focusedStep = FocusedStep(id: $0) })
+                         onExpand: { focusedStep = FocusedStep(id: $0) },
+                         showClockTimes: vm.currentPersona != .villager)
         }
     }
 

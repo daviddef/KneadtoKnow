@@ -94,6 +94,7 @@ struct LandscapeStepsView: View {
         let done = completed.contains(idx)
         let styleID = vm.input.style.id
         let isPanBake = vm.input.style.shape == .rectangular
+        let showClockTimes = vm.currentPersona != .villager
         let tools = StepGuide.tools(step.title, styleID: styleID, isPanBake: isPanBake, panSize: vm.panSizeText)
         return HStack(alignment: .top, spacing: 28) {
             // Left: the headline — icon, time, title, status, and the kit.
@@ -108,14 +109,18 @@ struct LandscapeStepsView: View {
                             .foregroundStyle(.white)
                     }
                     HStack(spacing: 6) {
-                        Image(systemName: "clock")
-                        Text(Scheduler.timeOnly(step.time))
+                        Image(systemName: showClockTimes ? "clock" : "hourglass")
+                        Text(showClockTimes
+                             ? Scheduler.timeOnly(step.time)
+                             : Scheduler.elapsed(step.time, since: vm.schedule.start))
                     }
                     .font(.rounded(20, weight: .bold))
                     .foregroundStyle(Palette.accent)
-                    Text(Scheduler.dayLabel(step.time, now: vm.now))
-                        .font(.rounded(13, weight: .medium))
-                        .foregroundStyle(Palette.textSoft)
+                    if showClockTimes {
+                        Text(Scheduler.dayLabel(step.time, now: vm.now))
+                            .font(.rounded(13, weight: .medium))
+                            .foregroundStyle(Palette.textSoft)
+                    }
                     if step.leadHours > 0 {
                         HStack(spacing: 6) {
                             Image(systemName: step.restLocation.icon)

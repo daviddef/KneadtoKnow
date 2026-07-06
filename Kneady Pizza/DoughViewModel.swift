@@ -587,8 +587,12 @@ final class DoughViewModel: ObservableObject {
     /// as real time marches on (and the app is reopened).
     var scheduleNow: Date { activeBake?.anchorDate ?? now }
 
-    /// The live bake plan, worked backward from the serve time.
-    var schedule: Schedule { Scheduler.build(input: input, now: scheduleNow) }
+    /// The live bake plan, worked backward from the serve time. Villager
+    /// doesn't track clock times, so there's nothing for sleep-awareness to
+    /// shift around.
+    var schedule: Schedule {
+        Scheduler.build(input: input, now: scheduleNow, skipSleepShift: currentPersona == .villager)
+    }
 
     /// The live recipe — recomputed automatically as inputs change.
     var result: DoughResult { DoughCalculator.calculate(input, schedule: schedule) }

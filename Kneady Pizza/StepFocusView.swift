@@ -10,6 +10,8 @@ struct StepFocusView: View {
     var now: Date = Date()
     @Binding var completed: Set<Int>
     var onToggle: (Int) -> Void = { _ in }
+    /// Off for Villager — no clock times, day labels, or "overnight" notes.
+    var showClockTimes: Bool = true
     @Environment(\.dismiss) private var dismiss
     @State private var page = 0
 
@@ -55,14 +57,18 @@ struct StepFocusView: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Image(systemName: "clock")
-                        Text(Scheduler.timeOnly(step.time))
+                        Image(systemName: showClockTimes ? "clock" : "hourglass")
+                        Text(showClockTimes
+                             ? Scheduler.timeOnly(step.time)
+                             : Scheduler.elapsed(step.time, since: steps.first?.time ?? step.time))
                     }
                     .font(.rounded(20, weight: .bold))
                     .foregroundStyle(Palette.accent)
-                    Text(Scheduler.dayLabel(step.time, now: now))
-                        .font(.rounded(14, weight: .medium))
-                        .foregroundStyle(Palette.textSoft)
+                    if showClockTimes {
+                        Text(Scheduler.dayLabel(step.time, now: now))
+                            .font(.rounded(14, weight: .medium))
+                            .foregroundStyle(Palette.textSoft)
+                    }
                 }
                 Spacer()
             }
@@ -142,7 +148,7 @@ struct StepFocusView: View {
     /// The rest after this step — duration, where it happens, and overnight note.
     private func leadLabel(_ step: ScheduleStep) -> String {
         var label = "\(Scheduler.duration(step.leadHours)) \(step.restLocation.phrase)"
-        if spansNight(from: step.time, hours: step.leadHours) {
+        if showClockTimes && spansNight(from: step.time, hours: step.leadHours) {
             label += " · overnight (you sleep)"
         }
         return label

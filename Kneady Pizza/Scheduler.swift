@@ -73,7 +73,7 @@ enum Scheduler {
         let rest: Double, loc: StepLocation, active: Bool
     }
 
-    static func build(input: DoughInput, now: Date) -> Schedule {
+    static func build(input: DoughInput, now: Date, skipSleepShift: Bool = false) -> Schedule {
         let serve = input.serveDate
         let available = max(0, serve.timeIntervalSince(now) / 3600.0)
         let tf = tempFactor(input.temperatureC)
@@ -226,7 +226,8 @@ enum Scheduler {
         // Sleep-aware: slide interior hands-on steps out of 22:00–06:00 by
         // shifting time between the rests on either side (the dough just rests a
         // little longer or shorter — total time, and the serve time, stay fixed).
-        sleepShift(&segs, start: start)
+        // Villager doesn't track clock times at all, so there's nothing to shift.
+        if !skipSleepShift { sleepShift(&segs, start: start) }
 
         // Assign times.
         var steps: [ScheduleStep] = []
@@ -456,5 +457,13 @@ enum Scheduler {
         if h == 0 { return "\(m)m" }
         if m == 0 { return "\(h)h" }
         return "\(h)h\(String(format: "%02d", m))"
+    }
+
+    /// Time since the plan's start, e.g. "+18h" — Villager's stand-in for a
+    /// clock time. It doesn't track wall-clock or accommodate sleep, so all
+    /// that matters is how far into the plan a step falls.
+    static func elapsed(_ date: Date, since start: Date) -> String {
+        let hours = date.timeIntervalSince(start) / 3600.0
+        return hours < 0.01 ? "Start" : "+\(durationShort(hours))"
     }
 }
