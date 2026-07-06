@@ -1,25 +1,5 @@
 import SwiftUI
 
-// MARK: - Section heading
-
-struct SectionLabel: View {
-    let index: Int
-    let title: String
-    var body: some View {
-        HStack(spacing: 10) {
-            Text("\(index)")
-                .font(.rounded(13, weight: .bold))
-                .foregroundStyle(Palette.accent)
-                .frame(width: 24, height: 24)
-                .background(Circle().fill(Palette.accent.opacity(0.14)))
-            Text(title)
-                .font(.rounded(15, weight: .semibold))
-                .foregroundStyle(Palette.textSoft)
-            Spacer()
-        }
-    }
-}
-
 /// A titled card wrapper used for each input group, with an optional info button.
 struct InputCard<Content: View>: View {
     let index: Int
