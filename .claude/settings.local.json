@@ -3,6 +3,7 @@
     "allow": [
       "Bash(xcodebuild -version)",
       "Bash(swift --version)",
+      "Bash(xcrun altool --upload-app:*)",
       "Bash(xcrun simctl *)",
       "Bash(xcodebuild -project KneadToKnow.xcodeproj -scheme KneadToKnow -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' -configuration Debug build)",
       "WebSearch",
