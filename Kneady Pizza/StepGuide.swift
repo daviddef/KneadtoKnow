@@ -3,8 +3,12 @@ import Foundation
 /// Per-step reference material — the kit that helps and the concept behind a
 /// step — shared by the ⓘ info sheet and the landscape cooking view.
 enum StepGuide {
-    /// The kit that helps with a given timeline step.
-    static func tools(_ title: String) -> [String] {
+    /// The kit that helps with a given timeline step. `styleID` picks out
+    /// focaccia's oil-and-herbs finish instead of sauce/cheese; `isPanBake`
+    /// (Detroit, Sicilian, focaccia) swaps the stone-and-peel kit for the
+    /// pan it already baked in. `panSize` (e.g. "35 cm×25 cm") calls out the
+    /// exact pan so the wrong size doesn't wreck the bake.
+    static func tools(_ title: String, styleID: String = "", isPanBake: Bool = false, panSize: String = "") -> [String] {
         if title.hasPrefix("Fold ") {
             return ["A small bowl of water for your hand", "A roomy bowl or tub with a lid"]
         }
@@ -20,7 +24,10 @@ enum StepGuide {
         case "Ball Roll":
             return ["Dough scraper", "Fine semolina", "An airtight tray or proofing boxes"]
         case "Into Pans", "Into the Pan":
-            return ["A metal baking pan", "Olive oil to coat it well"]
+            let pan = panSize.isEmpty
+                ? "A metal baking pan"
+                : "A metal baking pan, about \(panSize) — the wrong size makes it too thin or too thick"
+            return [pan, "Olive oil to coat it well"]
         case "Ready It":
             return ["Just counter space — let it warm up"]
         case "Shape It":
@@ -28,16 +35,20 @@ enum StepGuide {
         case "Dimple & Brine":
             return ["Well-oiled fingers", "A small bowl for the oil-water-salt brine"]
         case "Top It":
-            return ["A ladle or spoon for sauce", "A box grater for the cheese"]
+            return styleID == "focaccia"
+                ? ["Fresh rosemary", "Flaky salt", "Good olive oil"]
+                : ["A ladle or spoon for sauce", "A box grater for the cheese"]
         case "Bake It":
-            return ["A pizza stone or steel", "A pizza peel", "Oven gloves"]
+            return isPanBake
+                ? ["The same oiled pan you shaped it in — no stone or peel needed", "Oven gloves"]
+                : ["A pizza stone or steel", "A pizza peel", "Oven gloves"]
         default:
             return []
         }
     }
 
     /// Plain-English explainer for the concept behind a step.
-    static func concept(_ title: String) -> String? {
+    static func concept(_ title: String, styleID: String = "", isPanBake: Bool = false) -> String? {
         switch title {
         case "The Poolish":
             return "A poolish is a loose, 100%-hydration pre-ferment — equal parts flour and water with a pinch of yeast, left to bubble for around 12 hours. Mixing some of your flour ahead like this builds flavour, extensibility and a lighter crumb."
@@ -54,9 +65,13 @@ enum StepGuide {
         case "Shape It":
             return "Shaping is stretching each ball into a base by hand — from the centre outwards, never with a rolling pin, so you keep the air in the rim."
         case "Top It":
-            return "Toppings go on in the order that bakes best — usually sauce, then cheese, then the rest. Go light so the base doesn't turn soggy."
+            return styleID == "focaccia"
+                ? "Focaccia's \"topping\" is simple — good olive oil, herbs and salt pressed into the dimples. No sauce or cheese needed."
+                : "Toppings go on in the order that bakes best — usually sauce, then cheese, then the rest. Go light so the base doesn't turn soggy."
         case "Bake It":
-            return "The bake. The hotter your oven and the more preheated your stone or steel, the better the crust."
+            return isPanBake
+                ? "The bake. Pan bakes want steady, moderate heat — enough to cook the middle through before the top burns or the edges over-crisp."
+                : "The bake. The hotter your oven and the more preheated your stone or steel, the better the crust."
         default:
             return nil
         }

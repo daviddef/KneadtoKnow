@@ -92,7 +92,9 @@ struct LandscapeStepsView: View {
 
     private func page(idx: Int, step: ScheduleStep, total: Int) -> some View {
         let done = completed.contains(idx)
-        let tools = StepGuide.tools(step.title)
+        let styleID = vm.input.style.id
+        let isPanBake = vm.input.style.shape == .rectangular
+        let tools = StepGuide.tools(step.title, styleID: styleID, isPanBake: isPanBake, panSize: vm.panSizeText)
         return HStack(alignment: .top, spacing: 28) {
             // Left: the headline — icon, time, title, status, and the kit.
             ScrollView(showsIndicators: false) {
@@ -146,7 +148,7 @@ struct LandscapeStepsView: View {
                         }
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white))
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface))
                         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .stroke(Palette.amber.opacity(0.45), lineWidth: 1))
                     }
@@ -171,7 +173,7 @@ struct LandscapeStepsView: View {
                         }
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white))
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface))
                     }
                 }
                 .padding(.bottom, 24)
@@ -206,7 +208,7 @@ struct LandscapeStepsView: View {
                         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.well))
                     }
 
-                    if let concept = StepGuide.concept(step.title) {
+                    if let concept = StepGuide.concept(step.title, styleID: styleID, isPanBake: isPanBake) {
                         VStack(alignment: .leading, spacing: 6) {
                             Label("Good to know", systemImage: "lightbulb.fill")
                                 .font(.rounded(13, weight: .bold))
@@ -220,7 +222,7 @@ struct LandscapeStepsView: View {
                         }
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white))
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface))
                     }
                 }
                 .padding(.bottom, 30)

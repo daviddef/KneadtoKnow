@@ -239,7 +239,7 @@ enum Scheduler {
                 icon: seg.icon, title: seg.title, detail: seg.detail, time: cursor,
                 leadHours: seg.rest, restLocation: seg.loc,
                 isActive: seg.active, awkward: awk,
-                gotcha: gotchaFor(seg.title)))
+                gotcha: gotchaFor(seg.title, styleID: input.style.id)))
             cursor = cursor.addingTimeInterval(seg.rest * 3600)
         }
         let shapeTitle: String
@@ -261,17 +261,23 @@ enum Scheduler {
         steps.append(ScheduleStep(
             icon: shapeIcon, title: shapeTitle, detail: shapeDetail,
             time: serve, leadHours: 0, restLocation: .room, isActive: true, awkward: false,
-            gotcha: gotchaFor(shapeTitle)))
+            gotcha: gotchaFor(shapeTitle, styleID: input.style.id)))
+        // The dimple-and-brine step already covers focaccia's "assembly" (that's
+        // what style.assembly describes for it) — repeating it here would just
+        // echo the step before. Focaccia's actual topping is the rosemary/salt.
+        let topDetail = isFocaccia
+            ? "Finish with a drizzle of good olive oil, then scatter rosemary and flaky salt over the brined dimples."
+            : "Topping order: \(input.style.assembly)"
         steps.append(ScheduleStep(
             icon: "fork.knife.circle.fill", title: "Top It",
-            detail: "Topping order: \(input.style.assembly)",
+            detail: topDetail,
             time: serve, leadHours: 0, restLocation: .room, isActive: true, awkward: false,
-            gotcha: gotchaFor("Top It")))
+            gotcha: gotchaFor("Top It", styleID: input.style.id)))
         steps.append(ScheduleStep(
             icon: "flame.fill", title: "Bake It",
             detail: "\(input.oven.bakeAdvice(for: input.style)) Buon appetito!",
             time: serve, leadHours: 0, restLocation: .room, isActive: false, awkward: false,
-            gotcha: gotchaFor("Bake It")))
+            gotcha: gotchaFor("Bake It", styleID: input.style.id)))
 
         return Schedule(
             serve: serve, start: start, totalHours: total, leadHours: available,
@@ -348,7 +354,9 @@ enum Scheduler {
     }
 
     /// A "typical gotcha" for each timeline step (matched by title prefix).
-    private static func gotchaFor(_ title: String) -> String {
+    /// `styleID` lets a handful of steps speak to the specific bake (e.g. a
+    /// focaccia isn't a "pizza") instead of defaulting to pizza wording.
+    private static func gotchaFor(_ title: String, styleID: String = "") -> String {
         switch title {
         case "Autolyse":
             return "Don't add salt or yeast yet — salt tightens the gluten and slows hydration. 20–60 minutes is plenty; much longer and it can slacken too far."
@@ -371,9 +379,13 @@ enum Scheduler {
         case "Shape It":
             return "Stretch from the centre outwards with your fingertips — never a rolling pin (it knocks out the air). If it springs back, rest it 10 minutes."
         case "Top It":
-            return "Go light. Too much sauce or wet mozzarella floods the base and makes a soggy middle. Drain fresh cheese first."
+            return styleID == "focaccia"
+                ? "A light hand — too much rosemary or salt overpowers the dough, and it can draw out moisture and toughen the top."
+                : "Go light. Too much sauce or wet mozzarella floods the base and makes a soggy middle. Drain fresh cheese first."
         case "Bake It":
-            return "An under-heated oven gives a pale, bready crust — preheat the stone or steel fully before the pizza goes in."
+            return styleID == "focaccia"
+                ? "An under-baked focaccia stays pale and dense inside — preheat the oven fully before it goes in, and don't rush the time."
+                : "An under-heated oven gives a pale, bready crust — preheat the stone or steel fully before the pizza goes in."
         default:
             return "Trust your dough and adjust to taste."
         }

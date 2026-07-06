@@ -224,6 +224,8 @@ final class DoughViewModel: ObservableObject {
     /// Advances the app's sense of "now" to the live clock. For a Quick dough,
     /// "ready in X" is relative to now, so we slide the serve time forward to
     /// keep that duration steady — which keeps the Start time current too.
+    /// Villager never picks a serve time at all, so its plan is always
+    /// anchored to "starting now" the same way.
     func refreshNow() {
         let newNow = Date()
         // A quick proof keeps "ready in N hours" rolling forward — but never once
@@ -231,6 +233,9 @@ final class DoughViewModel: ObservableObject {
         if input.ferment == .quick && activeBake == nil {
             let readyIn = min(max(input.serveDate.timeIntervalSince(now), 3600), 24 * 3600)
             input.serveDate = newNow.addingTimeInterval(readyIn)
+        } else if currentPersona == .villager && activeBake == nil {
+            let ideal = Scheduler.idealTotalHours(input: input)
+            input.serveDate = Self.roundedUpToHalfHour(newNow.addingTimeInterval(ideal * 3600), after: newNow)
         }
         now = newNow
     }
@@ -467,7 +472,12 @@ final class DoughViewModel: ObservableObject {
         switch e {
         case .kid:
             kidMode = true
-        case .villager, .pizzaiolo:
+        case .villager:
+            kidMode = false
+            input.keepItSimple = true
+            SimpleModeStore.enabled = true
+            applySimpleProofDefault()   // Villager is always Cold Proof, timed from now
+        case .pizzaiolo:
             kidMode = false
             input.keepItSimple = true
             SimpleModeStore.enabled = true
@@ -685,6 +695,13 @@ final class DoughViewModel: ObservableObject {
         default:
             return []
         }
+    }
+
+    /// The pan size to bake in, formatted for display — empty for round styles
+    /// where there's no pan (just a peel and stone/steel).
+    var panSizeText: String {
+        guard input.style.shape == .rectangular else { return "" }
+        return "\(Units.length(input.panLength, unit: input.lengthUnit))×\(Units.length(input.panWidth, unit: input.lengthUnit))"
     }
 
     /// Cheese & tomato guidance for the "Top It" step, tuned to the style.

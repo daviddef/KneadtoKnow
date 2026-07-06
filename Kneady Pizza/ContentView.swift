@@ -1442,15 +1442,17 @@ struct ContentView: View {
     /// A step's info sheet — leads with *what the thing is* (poolish, autolyse,
     /// cold proof…) before the step's own instructions.
     private func stepInfo(for step: ScheduleStep) -> InfoTopic {
+        let styleID = vm.input.style.id
+        let isPanBake = vm.input.style.shape == .rectangular
         let body: String
-        if let concept = StepGuide.concept(step.title) {
+        if let concept = StepGuide.concept(step.title, styleID: styleID, isPanBake: isPanBake) {
             body = "\(concept)\n\nWhat to do now: \(step.detail)"
         } else {
             body = step.detail
         }
         return InfoTopic(id: "step-\(step.id)", title: step.title, body: body,
                          gotcha: step.gotcha.isEmpty ? [] : [step.gotcha],
-                         tools: StepGuide.tools(step.title))
+                         tools: StepGuide.tools(step.title, styleID: styleID, isPanBake: isPanBake, panSize: vm.panSizeText))
     }
 
     // MARK: Simple mode — two merged, chrome-free cards
@@ -1501,12 +1503,18 @@ struct ContentView: View {
 
             Divider().overlay(Palette.textSoft.opacity(0.15))
 
-            TactileSegmented(
-                options: FermentStyle.allCases,
-                selection: fermentChoice
-            ) { $0.label }
-            soonestLine
-            serveTimeControl
+            if vm.currentPersona == .villager {
+                // Villager keeps it to one decision: what to make. No proof
+                // choice, no serve-time picker — always Cold Proof, started now.
+                villagerProofLine
+            } else {
+                TactileSegmented(
+                    options: FermentStyle.allCases,
+                    selection: fermentChoice
+                ) { $0.label }
+                soonestLine
+                serveTimeControl
+            }
             startSummaryLine(info: simpleGuideInfo)
         }
         .padding(20)
@@ -1514,19 +1522,40 @@ struct ContentView: View {
         .softCard()
     }
 
+    /// Villager's stand-in for the proof picker — there's nothing to choose,
+    /// just a plain-English note on what's already happening.
+    private var villagerProofLine: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "snowflake")
+            Text("Cold Proof — a slow rise in the fridge for the best flavour, starting now.")
+        }
+        .font(.rounded(12, weight: .medium))
+        .foregroundStyle(Palette.cool)
+        .lineLimit(2)
+        .minimumScaleFactor(0.85)
+    }
+
     /// One collective explainer for the simple-mode card — covers the style,
     /// the proof choices, and the behind-the-scenes terms a newcomer won't know.
+    /// Villager never picks a proof, so it skips straight to the automatic bits.
     private var simpleGuideInfo: InfoTopic {
         let style = vm.input.style
+        let proofSection = vm.currentPersona == .villager
+            ? """
+              We've set this to Cold Proof — a long, slow rise in the fridge over 1–3 days. It gives the most flavour and the lightest, most digestible crust, for the least effort from you: mix it, then mostly leave it alone. The app always plans it starting now.
+              """
+            : """
+              Proofing is the rise — letting the yeast slowly fill the dough with air. Pick one:
+              • Quick — a fast, warm rise of about 3 hours, helped along by extra yeast and warm water. For pizza today, with a touch less depth of flavour.
+              • Warm Proof — a rise at room temperature, usually somewhere between 8 and 24 hours depending on how warm your kitchen is. Simple, reliable and a good all-rounder.
+              • Cold Proof — a long, slow rise in the fridge over 1–3 days. The most flavour and the lightest, most digestible crust, but it needs planning ahead.
+
+              Set when you want to eat (or, for Quick, how soon) and the app counts backwards to tell you when to start. If the time you've left is too short for the proof you chose, it flags the plan as rushed and offers a "Switch to a Quick dough" button — tap it to swap to the fast method so it still fits, or give yourself more time / choose Cold or Warm for a calmer bake.
+              """
         let body = """
         You've picked \(style.name) — \(style.blurb.lowercased())
 
-        Proofing is the rise — letting the yeast slowly fill the dough with air. Pick one:
-        • Quick — a fast, warm rise of about 3 hours, helped along by extra yeast and warm water. For pizza today, with a touch less depth of flavour.
-        • Warm Proof — a rise at room temperature, usually somewhere between 8 and 24 hours depending on how warm your kitchen is. Simple, reliable and a good all-rounder.
-        • Cold Proof — a long, slow rise in the fridge over 1–3 days. The most flavour and the lightest, most digestible crust, but it needs planning ahead.
-
-        Set when you want to eat (or, for Quick, how soon) and the app counts backwards to tell you when to start. If the time you've left is too short for the proof you chose, it flags the plan as rushed and offers a "Switch to a Quick dough" button — tap it to swap to the fast method so it still fits, or give yourself more time / choose Cold or Warm for a calmer bake.
+        \(proofSection)
 
         Your style may also use, automatically:
         • A poolish or biga — a small batch of flour, water and a little yeast mixed ahead and left to ferment (around 12–16 hours), then added to the dough for more flavour and strength. A poolish is loose and wet; a biga is stiff.
