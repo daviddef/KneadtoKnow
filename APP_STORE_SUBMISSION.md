@@ -1,7 +1,10 @@
 # Kneady Pizza — App Store submission pack
 
 App: **Kneady Pizza** · Bundle ID `com.daviddefranceski.kneadypizza` · Team `L9SAXP2E2W`
-Version **1.1** · Build **38** (iPhone-only) · Primary language: English (Australia or US — pick one below)
+Version **1.2** · Build **39** (iPhone-only) · Primary language: English (Australia or US — pick one below)
+
+> ⚠️ **1.1 is closed to new builds** — it was approved and released, and App Store Connect
+> won't accept further submissions under that version number. This release is **1.2**.
 
 ---
 
@@ -18,7 +21,7 @@ Version **1.1** · Build **38** (iPhone-only) · Primary language: English (Aust
 
 ---
 
-## 2. Version metadata (under the 1.1 version, "App Store" tab)
+## 2. Version metadata (under the 1.2 version, "App Store" tab)
 
 ### Promotional text (max 170 — editable any time without review)
 ```
@@ -76,18 +79,12 @@ pizza,dough,baker,hydration,poolish,kids,fermentation,proof,neapolitan,sourdough
 
 ### What's New in This Version (release notes)
 ```
-Introducing Kid Mode — a big, fun, mess-and-giggles way to make pizza together!
+A tidying-up update, mostly for Villager mode and focaccia bakers:
 
-• Pick a pizza (Hawaiian, Margherita, Dino Pepperoni and more) or build your own and save it.
-• Choose your dough: "Right now!" (ready in about 30 minutes) or "Puffy & bouncy".
-• One giant, animated step at a time in kid words — cups and spoons, with grams for grown-ups.
-• Jokes, confetti and cheering the whole way, with a grown-up hand-off for the hot oven.
-
-Also in this update:
-• A fresh MODE picker — Kid, Villager, Pizzaiolo or Roman — sets how simple or detailed the app feels.
-• Reminders now only ping once you've actually started baking.
-• The style picker locks while a bake is underway, so you don't lose your place.
-• Tap any cooking step to read it full-screen, swipe between steps, and see timing notes in a big clock pill.
+• Villager mode is now genuinely simple — always a Cold Proof, no need to say when you want it ready. Every step just shows how far into the plan you are (like "+18h"), not a clock time.
+• Focaccia gets its own voice: the instructions and kit list now talk about focaccia, not "pizza" — and call out the exact pan size, so the wrong pan doesn't spoil the bake.
+• Fixed hard-to-read text on the "Watch out", "Kit you'll need" and "Good to know" cards in landscape cooking mode when your phone is in Dark Mode.
+• Small wording and clarity fixes throughout.
 
 Buon appetito! 🍕
 ```
@@ -125,10 +122,10 @@ Answer the questionnaire:
 
 ## 4. Build, pricing, availability
 
-- **Build:** **1.1 (38)** — archived 2 Jul 2026, contains the mini-tile mode picker, video loop cap, and
-  mushroom/nutella/banana/peppers topping videos that build 37 was missing. Upload it from Organizer
-  (Distribute App → TestFlight & App Store → Upload), then select **1.1 (38)** here once it finishes
-  processing (watch for the email).
+- **Build:** **1.2 (39)** — archived and uploaded via CLI on 7 Jul 2026 (no Organizer needed — see the
+  release-workflow memory for the full archive → export → `xcrun altool --upload-app` pipeline). Contains
+  the Villager simplification, focaccia wording/kit fixes, and the Dark Mode contrast fix. Select
+  **1.2 (39)** here once it finishes processing (watch for the email).
 - **Price:** Free (Tier 0) unless you intend to charge.
 - **Availability:** all territories (or restrict if you like).
 - **Export compliance:** the app sets `ITSAppUsesNonExemptEncryption = NO`, so you won't be asked the encryption questions.
@@ -142,7 +139,7 @@ Answer the questionnaire:
 | Sign-in required? | **No** |
 | Demo account | Not needed |
 | Contact | your name, email, phone |
-| **Notes** | "No login required. The app works fully offline. Location and notifications are both optional and only enhance the experience: Location fetches the current temperature from the free Open-Meteo API (no key) to time the dough; Notifications give optional step reminders and only fire while a bake is actively in progress. To see the full flow: complete the short onboarding, pick a style and serve time, then open Cooking Directions. Rotate to landscape for the step-by-step cooking mode (swipe between steps, double-tap to complete), or tap a step to read it full-screen. **NEW IN 1.1** — Kid Mode: turn it on from the menu (top-left ≡ icon → MODE → 'Kid') or during first-run onboarding ('I am a Kid'). It's an optional, playful mode for cooking pizza with children — big text, short looping video demonstrations of each step, jokes and confetti. It collects no data, has no ads, no in-app purchases and no external links or social features. The final 'into the oven' step is explicitly labelled for a grown-up and includes a prominent 'Grown-ups' button back to the full app. This is a general Food & Drink app with an optional kid-friendly sub-mode, not an app primarily directed at children." |
+| **Notes** | "No login required. The app works fully offline. Location and notifications are both optional and only enhance the experience: Location fetches the current temperature from the free Open-Meteo API (no key) to time the dough; Notifications give optional step reminders and only fire while a bake is actively in progress. To see the full flow: complete the short onboarding. Picking 'I am a Villager' gives the simplest experience — always a Cold Proof, no need to set a serve time. 'Sunday Pizzaiolo' or 'Roman Soldier' let you pick the proof style and an exact serve time. Then open Cooking Directions. Rotate to landscape for the step-by-step cooking mode (swipe between steps, double-tap to complete), or tap a step to read it full-screen. **NEW IN 1.2** — Quality and clarity fixes: Villager mode is now genuinely simpler (always Cold Proof, no serve-time question, and every step shows how far into the plan you are — e.g. '+18h' — instead of a clock time). Focaccia's instructions and kit list now speak to focaccia specifically instead of generic pizza wording, and call out the exact pan size needed so the wrong pan doesn't spoil the bake. Fixed a Dark Mode contrast issue in the landscape cooking view where some card text was hard to read. **NEW IN 1.1** — Kid Mode: turn it on from the menu (top-left ≡ icon → MODE → 'Kid') or during first-run onboarding ('I am a Kid'). It's an optional, playful mode for cooking pizza with children — big text, short looping video demonstrations of each step, jokes and confetti. It collects no data, has no ads, no in-app purchases and no external links or social features. The final 'into the oven' step is explicitly labelled for a grown-up and includes a prominent 'Grown-ups' button back to the full app. This is a general Food & Drink app with an optional kid-friendly sub-mode, not an app primarily directed at children." |
 
 ---
 
@@ -161,8 +158,8 @@ Answer the questionnaire:
 8. Kid Mode — a big animated step (with video). → `appstore/screenshots/kid-3-mix.png`
 
 > `appstore/screenshots/kid-4-mode-picker.png` (the MODE tile picker in the menu) is also available as
-> a bonus/optional 9th shot. All four were recaptured 2 Jul 2026 at 1242×2688 against build 38 — current
-> with the latest Kid Mode UI.
+> a bonus/optional 9th shot. All four were recaptured 2 Jul 2026 at 1242×2688 against build 38 — still
+> visually current for 1.2 (Kid Mode's own screens aren't affected by the Villager/focaccia fixes).
 
 **How to capture (easiest, correct resolution):**
 1. Open the project in Xcode → run on **iPhone 17 Pro Max** simulator (6.9"). The app is iPhone-only, so no iPad capture is needed.
@@ -178,14 +175,14 @@ Ask Claude to drive the simulator and capture the full set if you'd rather not d
 ## 7. Step-by-step in App Store Connect
 
 1. **appstoreconnect.com → My Apps → Kneady Pizza** (the record already exists from TestFlight).
-2. If there's no 1.1 version yet: **(＋) next to "iOS App" → create version 1.1**.
+2. If there's no 1.2 version yet: **(＋) next to "iOS App" → create version 1.2** (not 1.1 — that train is closed).
 3. Fill **App Information** (section 1) — name, subtitle, categories, content rights (unchanged since 1.0, but check they're still correct).
-4. In the **1.1 version page** fill: promotional text, description, keywords, what's new, support/marketing/privacy URLs, copyright (section 2).
+4. In the **1.2 version page** fill: promotional text, description, keywords, what's new, support/marketing/privacy URLs, copyright (section 2).
 5. Upload **screenshots** (section 6) to each required size slot — `appstore/screenshots/kid-*.png` are ready.
-6. **Build:** upload **1.1 (38)** from Organizer if you haven't already, then scroll to "Build", click **(＋)**, choose **1.1 (38)** once it's finished processing. (Answer export-compliance if prompted — it won't be, given the plist flag.)
-7. **App Privacy** (section 3) — re-check the questionnaire is still accurate (no new data collection in 1.1) and **Publish**.
+6. **Build:** already uploaded via CLI (section 4) — scroll to "Build", click **(＋)**, choose **1.2 (39)** once it's finished processing. (Answer export-compliance if prompted — it won't be, given the plist flag.)
+7. **App Privacy** (section 3) — re-check the questionnaire is still accurate (no new data collection in 1.2) and **Publish**.
 8. Set **Pricing and Availability** (section 4).
-9. **App Review Information** (section 5) — make sure the Kid Mode note is included.
+9. **App Review Information** (section 5) — make sure the 1.2 and Kid Mode notes are both included.
 10. **Version Release:** "Automatically release after approval" (or manual).
 11. Click **Add for Review → Submit**.
 

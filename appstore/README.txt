@@ -9,7 +9,7 @@ FILE                       ASC FIELD                          LIMIT      USED
 03_promotional_text.txt    Version > Promotional Text          170        165
 04_description.txt         Version > Description               4000       2470
 05_keywords.txt            Version > Keywords                  100         99
-06_whats_new.txt           Version > What's New                4000        865
+06_whats_new.txt           Version > What's New                4000        655
 07_support_url.txt         Version > Support URL               -            -
 08_marketing_url.txt       Version > Marketing URL (optional)  -            -
 09_privacy_policy_url.txt  App Privacy > Privacy Policy URL    -            -
@@ -21,8 +21,13 @@ OTHER FIELDS (no paste needed)
 - Primary category: Food & Drink   | Secondary (optional): Lifestyle
 - Age rating: 4+  (answer "None" to every content question)
 - Price: Free (Tier 0)
-- Build to attach: 1.1 (38)   (iPhone-only) — archived 2 Jul 2026, upload it and select it here
+- Build to attach: 1.2 (39)   (iPhone-only) — archived + uploaded via CLI 7 Jul 2026, select it here
 - Export compliance: not asked (ITSAppUsesNonExemptEncryption = NO)
+
+⚠️ VERSION NOTE — 1.1 is closed
+Once a version is approved and released, App Store Connect closes its "train"
+to further build submissions. That happened to 1.1, so this release ships as
+**1.2** — if you're creating the version in ASC, create 1.2, not 1.1.
 
 SCREENSHOTS
 - iPhone 6.9" (1320x2868) or 6.7" (1290x2796); 6.5" (1242x2688) also accepted.
@@ -30,8 +35,8 @@ SCREENSHOTS
 - Capture in the iPhone 17 Pro Max simulator: Cmd+S saves a correct-size PNG;
   Cmd+Left rotates for the landscape cooking-mode shot.
 - screenshots/kid-1-pick.png, kid-2-choose-dough.png, kid-3-mix.png,
-  kid-4-mode-picker.png were recaptured 2 Jul 2026 at 1242x2688 against
-  build 38 — current with the latest Kid Mode UI (bigger dough cards, step
-  videos, mini-tile mode picker).
+  kid-4-mode-picker.png were captured 2 Jul 2026 at 1242x2688 against build 38
+  — still visually current for 1.2 (no UI changed in the screenshots' flows),
+  but they predate the Villager/focaccia fixes described in this release.
 
 Full walkthrough: ../APP_STORE_SUBMISSION.md  (section 7 is click-by-click)
