@@ -317,7 +317,9 @@ final class DoughViewModel: ObservableObject {
             ("Mode", i.keepItSimple ? "Simple" : "Classic"),
             ("Make", "\(i.ballCount) \(noun) · \(size)"),
             ("Yeast", i.yeast.fullName),
-            ("Pre-ferment", i.usePreferment ? "\(i.preferment.name) · \(pct(i.prefermentPct)) of flour" : "None"),
+            ("Pre-ferment", i.usePreferment
+                ? "\(i.preferment.name) · \(pct(min(i.prefermentPct, DoughCalculator.maxSafePrefermentPct(hydration: i.hydration, preferment: i.preferment)))) of flour"
+                : "None"),
             ("Autolyse", i.useAutolyse ? "Yes" : "No"),
             ("Hydration", pct(i.hydration)),
             ("Salt", pct(i.salt)),

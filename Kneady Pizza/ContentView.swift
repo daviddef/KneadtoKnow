@@ -1008,15 +1008,24 @@ struct ContentView: View {
                             .foregroundStyle(Palette.textSoft)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        let pg = DoughCalculator.prefermentGuidance(vm.input.preferment, value: vm.input.prefermentPct)
+                        let pg = DoughCalculator.prefermentGuidance(vm.input.preferment, value: vm.input.prefermentPct, hydration: vm.input.hydration)
+                        // The slider itself can't be dragged past what the recipe's own
+                        // hydration can supply — the guidance below still explains it if a
+                        // since-lowered hydration left a stored value above that ceiling.
+                        let maxSafePct = DoughCalculator.maxSafePrefermentPct(hydration: vm.input.hydration, preferment: vm.input.preferment)
+                        let clampedPct = Binding<Double>(
+                            get: { min(vm.input.prefermentPct, maxSafePct) },
+                            set: { vm.input.prefermentPct = $0 }
+                        )
                         TactileSlider(
                             title: "\(vm.input.preferment.name) proportion",
-                            value: $vm.input.prefermentPct,
-                            range: 0.10...1.00,
+                            value: clampedPct,
+                            range: 0.10...maxSafePct,
                             step: 0.05,
-                            valueText: pct(vm.input.prefermentPct),
+                            valueText: pct(clampedPct.wrappedValue),
                             tint: pg.color,
-                            caption: "Share of the total flour pre-fermented."
+                            caption: "Share of the total flour pre-fermented.",
+                            editUnit: .percent
                         )
                         if pg.level != .ideal {
                             HStack(spacing: 5) {
@@ -1154,7 +1163,7 @@ struct ContentView: View {
         VStack(spacing: 4) {
             TactileSlider(title: title, value: value, range: range, step: step,
                           valueText: "\(pct(value.wrappedValue)) · \(grams(gramValue))",
-                          tint: guidance.color)
+                          tint: guidance.color, editUnit: .percent)
             if let preferment, let dough {
                 splitLine(name: name ?? "Pre-ferment", preferment: preferment, dough: dough)
             }

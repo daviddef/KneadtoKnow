@@ -229,6 +229,13 @@ struct LandscapeStepsView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface))
                     }
+
+                    if StepGuide.isProofStep(step.title) {
+                        PokeTestGuide()
+                            .padding(14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface))
+                    }
                 }
                 .padding(.bottom, 30)
             }

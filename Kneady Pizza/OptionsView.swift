@@ -206,6 +206,8 @@ struct GuidesView: View {
                      subtitle: "The thinking behind every number, plus more about ingredients.") { HowItWorksView() }
                 link(icon: "wrench.and.screwdriver.fill", title: "Tools & equipment",
                      subtitle: "The kit that makes pizza easier — from a scale to a steel.") { ToolsView() }
+                link(icon: "thermometer.medium", title: "Water temperature",
+                     subtitle: "Work out the desired dough temperature (DDT) for your mix.") { DDTCalculatorView() }
                 link(icon: "exclamationmark.triangle.fill", title: "Things that may get-ya",
                      subtitle: "The usual pizza disasters — and how to dodge them.") { GotchasView() }
                 link(icon: "character.book.closed.fill", title: "Definitions",

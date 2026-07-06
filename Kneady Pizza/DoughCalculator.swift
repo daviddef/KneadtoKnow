@@ -41,6 +41,10 @@ struct RecipeStage: Identifiable, Hashable {
 struct PrefermentSplit {
     let name: String
     let hydration: Double
+    /// The proportion actually used — may be capped below the slider's raw
+    /// value (see `makePrefermentSplit`), so every display reads this, not
+    /// the raw input, to stay consistent with the ingredients shown.
+    let usedPct: Double
     let prefermentFlour: Double
     let prefermentWater: Double
     let prefermentYeast: Double
@@ -244,7 +248,13 @@ enum DoughCalculator {
     }
 
     /// Colour-coded advice for the share of flour held in a pre-ferment.
-    static func prefermentGuidance(_ pf: Preferment, value: Double) -> WeightGuidance {
+    /// `hydration` lets this flag the one genuinely invalid case: a poolish or
+    /// biga can't draw more water than the recipe's own hydration provides.
+    static func prefermentGuidance(_ pf: Preferment, value: Double, hydration: Double) -> WeightGuidance {
+        let maxSafe = maxSafePrefermentPct(hydration: hydration, preferment: pf)
+        if value > maxSafe + 0.001 {
+            return .init(level: .warning, message: "Too high for \(Int((hydration * 100).rounded()))% hydration — capped to \(Int((maxSafe * 100).rounded()))%, or the \(pf.name.lowercased()) alone would need more water than the whole recipe has.")
+        }
         let ideal: ClosedRange<Double> = pf == .poolish ? 0.20...0.45 : 0.40...0.65
         let wide = (ideal.lowerBound - 0.10)...(ideal.upperBound + 0.15)
         if ideal.contains(value) {
@@ -366,13 +376,25 @@ enum DoughCalculator {
 
     // MARK: Pre-ferment method (poolish or biga: flour + water + yeast)
 
+    /// The highest preferment proportion the recipe's own hydration can
+    /// supply. A poolish (100% hydration) or biga (~50%) draws its water from
+    /// the *same* total-water pool as the final dough — past this point the
+    /// preferment alone would need more water than the whole recipe has, so
+    /// letting the slider go further would silently short-change the final
+    /// dough's water (and quietly raise the real hydration above what's shown).
+    static func maxSafePrefermentPct(hydration: Double, preferment: Preferment) -> Double {
+        guard preferment.hydration > 0 else { return 1.0 }
+        return min(1.0, hydration / preferment.hydration)
+    }
+
     /// Works out how flour and water divide between the pre-ferment and the
     /// final dough. The pre-ferment is dosed as a fraction of the *total flour*
     /// at its own hydration (poolish 100%, biga ~50%), plus a small yeast
     /// charge; salt, oil and honey live entirely in the final dough.
     private static func makePrefermentSplit(input: DoughInput, totalDough: Double, schedule: Schedule) -> PrefermentSplit {
         let pf = input.preferment
-        let pct = clamp(input.prefermentPct, 0.05, 1.0)
+        let maxSafe = maxSafePrefermentPct(hydration: input.hydration, preferment: pf)
+        let pct = clamp(input.prefermentPct, 0.05, maxSafe)
 
         let restHours = max(schedule.prefermentRestHours, 1)
         let scale = leaveningScale(hours: restHours, tempC: input.temperatureC)
@@ -390,6 +412,7 @@ enum DoughCalculator {
         return PrefermentSplit(
             name: pf.name,
             hydration: pf.hydration,
+            usedPct: pct,
             prefermentFlour: prefFlour,
             prefermentWater: prefWater,
             prefermentYeast: prefYeast,
@@ -416,7 +439,7 @@ enum DoughCalculator {
 
         var finalItems: [Ingredient] = [
             Ingredient("All of the \(split.name.lowercased())", split.prefermentTotal,
-                       note: pct(input.prefermentPct) + " of flour"),
+                       note: pct(split.usedPct) + " of flour"),
             Ingredient("Flour", split.finalFlour),
             Ingredient("Water", split.finalWater, note: "\(pct(input.hydration)) total hydration"),
             Ingredient("Salt", split.totalFlour * input.salt, note: pct(input.salt)),

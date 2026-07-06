@@ -206,6 +206,10 @@ struct TactileToggle: View {
 
 // MARK: - Labelled slider in a well
 
+/// Whether a slider's underlying `value` is the number to type directly (cm,
+/// grams…) or a 0–1 fraction that should be typed and shown as a percentage.
+enum SliderEditUnit { case raw, percent }
+
 struct TactileSlider: View {
     let title: String
     @Binding var value: Double
@@ -216,6 +220,30 @@ struct TactileSlider: View {
     var tint: Color = Palette.accent
     /// Optional caption shown under the slider (e.g. weight guidance).
     var caption: String? = nil
+    /// Tap the value to type an exact number instead of dragging to it.
+    var editUnit: SliderEditUnit = .raw
+
+    @State private var isEditing = false
+    @State private var editText = ""
+    @FocusState private var fieldFocused: Bool
+
+    private var editSuffix: String { editUnit == .percent ? "%" : "" }
+
+    private func startEditing() {
+        let shown = editUnit == .percent ? value * 100 : value
+        let decimals = step < 1 ? 1 : 0
+        editText = String(format: "%.\(decimals)f", shown)
+        isEditing = true
+        fieldFocused = true
+    }
+
+    private func commitEdit() {
+        defer { isEditing = false }
+        guard let typed = Double(editText) else { return }
+        let raw = editUnit == .percent ? typed / 100 : typed
+        if raw != value { Haptics.tap() }
+        value = min(max(raw, range.lowerBound), range.upperBound)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -224,10 +252,32 @@ struct TactileSlider: View {
                     .font(.rounded(16))
                     .foregroundStyle(Palette.text)
                 Spacer()
-                Text(valueText)
+                if isEditing {
+                    HStack(spacing: 2) {
+                        TextField("", text: $editText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .focused($fieldFocused)
+                            .frame(width: 56)
+                            .onSubmit { commitEdit() }
+                            .onChange(of: fieldFocused) { _, focused in
+                                if !focused { commitEdit() }
+                            }
+                        if !editSuffix.isEmpty {
+                            Text(editSuffix).foregroundStyle(Palette.textSoft)
+                        }
+                    }
                     .font(.rounded(17, weight: .semibold))
                     .foregroundStyle(tint)
-                    .contentTransition(.numericText())
+                } else {
+                    Button { startEditing() } label: {
+                        Text(valueText)
+                            .font(.rounded(17, weight: .semibold))
+                            .foregroundStyle(tint)
+                            .contentTransition(.numericText())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             Slider(value: $value, in: range, step: step) { editing in
                 if editing { Haptics.tap() }

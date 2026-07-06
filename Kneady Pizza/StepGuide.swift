@@ -47,6 +47,13 @@ enum StepGuide {
         }
     }
 
+    /// Whether this is the final, shaped-dough rest — the one point where the
+    /// poke test applies (there's nothing shaped to poke during bulk rise or
+    /// before dividing).
+    static func isProofStep(_ title: String) -> Bool {
+        ["Ball Roll", "Into Pans", "Into the Pan"].contains(title)
+    }
+
     /// Plain-English explainer for the concept behind a step.
     static func concept(_ title: String, styleID: String = "", isPanBake: Bool = false) -> String? {
         switch title {

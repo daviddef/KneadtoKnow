@@ -120,6 +120,13 @@ struct StepFocusView: View {
                 .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.well))
             }
 
+            if StepGuide.isProofStep(step.title) {
+                PokeTestGuide()
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.well))
+            }
+
             if !step.gotcha.isEmpty {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
