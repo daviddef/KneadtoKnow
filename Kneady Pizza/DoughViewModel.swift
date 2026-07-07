@@ -281,6 +281,15 @@ final class DoughViewModel: ObservableObject {
         NotificationManager.reschedule(steps: schedule.steps, now: now)
     }
 
+    /// Keeps the Lock Screen / Dynamic Island Live Activity in step with the
+    /// bake underway — same "only while a bake is underway" rule as
+    /// reminders, but refreshed on every tick since the current step moves.
+    func refreshLiveActivity() {
+        guard let bake = activeBake else { LiveActivityManager.end(); return }
+        let styleName = PizzaStyle.all.first { $0.id == bake.recipe.styleID }?.name ?? "Pizza"
+        LiveActivityManager.refresh(styleName: styleName, steps: schedule.steps, completed: bake.completedSteps)
+    }
+
     /// A short spec for the saved favourite — style, hydration and pre-ferment.
     var favouriteSpec: String? {
         guard let fav = FavouriteStore.load() else { return nil }
@@ -398,6 +407,7 @@ final class DoughViewModel: ObservableObject {
         BakeStore.save(bake)
         activeBake = bake
         rescheduleNotifications()   // reminders start now that a bake is underway
+        refreshLiveActivity()       // Lock Screen / Dynamic Island starts too
         Haptics.success()
     }
 
@@ -409,6 +419,7 @@ final class DoughViewModel: ObservableObject {
         if !completed.isEmpty, completed.count >= totalSteps {
             BakeStore.clear(); activeBake = nil
             rescheduleNotifications()   // clears any pending reminders
+            refreshLiveActivity()       // ends the Live Activity too
             return
         }
         // Only record once a bake exists (via Go) or the first step is ticked.
@@ -421,6 +432,7 @@ final class DoughViewModel: ObservableObject {
         BakeStore.save(bake)
         activeBake = bake
         if !wasActive { rescheduleNotifications() }   // first tick auto-started a bake
+        refreshLiveActivity()   // every tick moves the current step along
     }
 
     /// Cancel the in-progress bake and fall back to the favourite (or defaults).
@@ -428,6 +440,7 @@ final class DoughViewModel: ObservableObject {
         BakeStore.clear()
         activeBake = nil
         rescheduleNotifications()   // stop reminders for the cancelled bake
+        refreshLiveActivity()       // and end the Live Activity
         if FavouriteStore.load() != nil {
             applyFavourite()
         } else {

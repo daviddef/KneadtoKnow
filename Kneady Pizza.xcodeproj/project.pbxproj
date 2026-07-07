@@ -6,12 +6,60 @@
 	objectVersion = 70;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2C3237DC3C15881F92775154 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3A25EEF34FE48BA607E7A8E /* Foundation.framework */; };
+		51BB24E92CA419838B0C8F2E /* BakeActivityAttributes.swift (shared) in Sources */ = {isa = PBXBuildFile; fileRef = 88475228266D0E4F5CA2EEC3 /* BakeActivityAttributes.swift (shared) */; };
+		52C685B8F5ADCA62BB3675A1 /* Kneady Pizza Widgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 78C0CD679CA64D14AF4C32AF /* Kneady Pizza Widgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8DF6A48D8C5E6CCBF6A9735A /* KneadyPizzaWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD47A6CE5520EAD9E922B3B8 /* KneadyPizzaWidgetsBundle.swift */; };
+		9DE9E67FA51166140C95F509 /* BakeLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 084A95F75667DEDC2E352A05 /* BakeLiveActivity.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		498E4310C49CFC389EF519E6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1A0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BDC31ACC361C7BB6C92BB966;
+			remoteInfo = "Kneady Pizza Widgets";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		552B54DEBA1435B4802B8200 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				52C685B8F5ADCA62BB3675A1 /* Kneady Pizza Widgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		084A95F75667DEDC2E352A05 /* BakeLiveActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BakeLiveActivity.swift; sourceTree = "<group>"; };
 		1A0000000000000000000004 /* Kneady Pizza.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kneady Pizza.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		78C0CD679CA64D14AF4C32AF /* Kneady Pizza Widgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Kneady Pizza Widgets.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		88475228266D0E4F5CA2EEC3 /* BakeActivityAttributes.swift (shared) */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "BakeActivityAttributes.swift (shared)"; path = "../Kneady Pizza/BakeActivityAttributes.swift"; sourceTree = "<group>"; };
+		A3A25EEF34FE48BA607E7A8E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		AD47A6CE5520EAD9E922B3B8 /* KneadyPizzaWidgetsBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KneadyPizzaWidgetsBundle.swift; sourceTree = "<group>"; };
+		D7909644F12B6D49A43B6365 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1A000000000000000000000F /* Kneady Pizza */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Kneady Pizza"; sourceTree = "<group>"; };
+		1A000000000000000000000F /* Kneady Pizza */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "Kneady Pizza";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -19,6 +67,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8EAC42E7FD64C11335F62E6E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2C3237DC3C15881F92775154 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -30,6 +86,8 @@
 			children = (
 				1A000000000000000000000F /* Kneady Pizza */,
 				1A0000000000000000000003 /* Products */,
+				FB73316DE31BAF355E0B04D5 /* Frameworks */,
+				23B7DEEAB188A0842180A1D6 /* Kneady Pizza Widgets */,
 			);
 			sourceTree = "<group>";
 		};
@@ -37,8 +95,37 @@
 			isa = PBXGroup;
 			children = (
 				1A0000000000000000000004 /* Kneady Pizza.app */,
+				78C0CD679CA64D14AF4C32AF /* Kneady Pizza Widgets.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		23B7DEEAB188A0842180A1D6 /* Kneady Pizza Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				D7909644F12B6D49A43B6365 /* Info.plist */,
+				AD47A6CE5520EAD9E922B3B8 /* KneadyPizzaWidgetsBundle.swift */,
+				084A95F75667DEDC2E352A05 /* BakeLiveActivity.swift */,
+				88475228266D0E4F5CA2EEC3 /* BakeActivityAttributes.swift (shared) */,
+			);
+			name = "Kneady Pizza Widgets";
+			path = "Kneady Pizza Widgets";
+			sourceTree = "<group>";
+		};
+		47C17552BF959964F9ACCEEC /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				A3A25EEF34FE48BA607E7A8E /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		FB73316DE31BAF355E0B04D5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				47C17552BF959964F9ACCEEC /* iOS */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -51,20 +138,37 @@
 				1A0000000000000000000006 /* Sources */,
 				1A0000000000000000000007 /* Frameworks */,
 				1A0000000000000000000008 /* Resources */,
+				552B54DEBA1435B4802B8200 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				22260AF1720F1C6A458DD718 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				1A000000000000000000000F /* Kneady Pizza */,
 			);
 			name = "Kneady Pizza";
-			packageProductDependencies = (
-			);
 			productName = "Kneady Pizza";
 			productReference = 1A0000000000000000000004 /* Kneady Pizza.app */;
 			productType = "com.apple.product-type.application";
+		};
+		BDC31ACC361C7BB6C92BB966 /* Kneady Pizza Widgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14336E8E340B8BEA351710C5 /* Build configuration list for PBXNativeTarget "Kneady Pizza Widgets" */;
+			buildPhases = (
+				5040B82192BD4DBDF326FD36 /* Sources */,
+				8EAC42E7FD64C11335F62E6E /* Frameworks */,
+				7CAA7751ACCD6445D2B12C73 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Kneady Pizza Widgets";
+			productName = "Kneady Pizza Widgets";
+			productReference = 78C0CD679CA64D14AF4C32AF /* Kneady Pizza Widgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -96,12 +200,20 @@
 			projectRoot = "";
 			targets = (
 				1A0000000000000000000005 /* Kneady Pizza */,
+				BDC31ACC361C7BB6C92BB966 /* Kneady Pizza Widgets */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1A0000000000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7CAA7751ACCD6445D2B12C73 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -118,7 +230,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5040B82192BD4DBDF326FD36 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8DF6A48D8C5E6CCBF6A9735A /* KneadyPizzaWidgetsBundle.swift in Sources */,
+				9DE9E67FA51166140C95F509 /* BakeLiveActivity.swift in Sources */,
+				51BB24E92CA419838B0C8F2E /* BakeActivityAttributes.swift (shared) in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		22260AF1720F1C6A458DD718 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "Kneady Pizza Widgets";
+			target = BDC31ACC361C7BB6C92BB966 /* Kneady Pizza Widgets */;
+			targetProxy = 498E4310C49CFC389EF519E6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1A000000000000000000000B /* Debug */ = {
@@ -243,6 +374,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Kneady Pizza";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kneady Pizza uses your location to fetch the current temperature, so it can time your dough's rise to your kitchen.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -258,7 +390,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -275,6 +407,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Kneady Pizza";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kneady Pizza uses your location to fetch the current temperature, so it can time your dough's rise to your kitchen.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -290,13 +423,73 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
+		};
+		BA34141661E4CC9020D38AF2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 39;
+				DEVELOPMENT_TEAM = L9SAXP2E2W;
+				INFOPLIST_FILE = "Kneady Pizza Widgets/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.daviddefranceski.kneadypizza.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C7D2F0CCF29A2FD71FDD8817 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 39;
+				DEVELOPMENT_TEAM = L9SAXP2E2W;
+				INFOPLIST_FILE = "Kneady Pizza Widgets/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.daviddefranceski.kneadypizza.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		14336E8E340B8BEA351710C5 /* Build configuration list for PBXNativeTarget "Kneady Pizza Widgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA34141661E4CC9020D38AF2 /* Release */,
+				C7D2F0CCF29A2FD71FDD8817 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		1A0000000000000000000009 /* Build configuration list for PBXProject "Kneady Pizza" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
