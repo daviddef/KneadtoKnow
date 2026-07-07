@@ -36,6 +36,56 @@ struct ConfettiView: View {
     }
 }
 
+// MARK: - Sticker board
+
+/// The full collection — earned stickers in colour, the rest kept a mystery
+/// so there's always something left to find out.
+struct KidStickerBoardView: View {
+    let earned: Set<String>
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 18) {
+                    Text("\(earned.count) of \(KidStickerLibrary.all.count) collected")
+                        .font(.rounded(16, weight: .bold))
+                        .foregroundStyle(Kid.inkSoft)
+
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
+                        ForEach(KidStickerLibrary.all) { sticker in
+                            let got = earned.contains(sticker.id)
+                            VStack(spacing: 8) {
+                                Text(got ? sticker.emoji : "❔")
+                                    .font(.system(size: 36))
+                                    .frame(width: 72, height: 72)
+                                    .background(Circle().fill(got ? Kid.sunnySoft : Kid.inkSoft.opacity(0.08)))
+                                    .overlay(Circle().stroke(got ? Kid.sunny : Kid.inkSoft.opacity(0.2), lineWidth: 2))
+                                Text(got ? sticker.name : "???")
+                                    .font(.rounded(13, weight: .bold))
+                                    .foregroundStyle(got ? Kid.ink : Kid.inkSoft.opacity(0.5))
+                                    .multilineTextAlignment(.center)
+                            }
+                            .opacity(got ? 1 : 0.7)
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .background(Kid.cream.ignoresSafeArea())
+            .navigationTitle("My Stickers")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .font(.rounded(16, weight: .bold))
+                        .foregroundStyle(Kid.tomato)
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Coordinator
 
 struct KidModeView: View {
@@ -50,6 +100,10 @@ struct KidModeView: View {
     @State private var burst = false
     @State private var videosMuted = false   // one mute switch for every clip (sound on by default)
 
+    @State private var earnedStickers: Set<String> = KidStickerStore.earned()
+    @State private var justEarnedSticker: KidSticker? = nil
+    @State private var showStickerBoard = false
+
     // Make-your-own selections
     @State private var bSauce = true
     @State private var bCheese = true
@@ -63,6 +117,9 @@ struct KidModeView: View {
         }
         .tint(Kid.tomato)
         .onAppear { UIApplication.shared.isIdleTimerDisabled = true; KidAudio.activate() }
+        .sheet(isPresented: $showStickerBoard) {
+            KidStickerBoardView(earned: earnedStickers)
+        }
     }
 
     @ViewBuilder private var content: some View {
@@ -91,6 +148,25 @@ struct KidModeView: View {
             .padding(.horizontal, 16).padding(.vertical, 11)
             .background(Capsule().fill(.white))
             .overlay(Capsule().stroke(Kid.inkSoft.opacity(0.25), lineWidth: 1))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var stickerBoardButton: some View {
+        Button {
+            Haptics.tap()
+            showStickerBoard = true
+        } label: {
+            HStack(spacing: 6) {
+                Text("🎟️")
+                Text("\(earnedStickers.count)/\(KidStickerLibrary.all.count)")
+            }
+            .font(.rounded(15, weight: .bold))
+            .foregroundStyle(Kid.tomatoDk)
+            .padding(.horizontal, 14).padding(.vertical, 11)
+            .background(Capsule().fill(Kid.sunnySoft))
+            .overlay(Capsule().stroke(Kid.sunny, lineWidth: 1))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -125,6 +201,7 @@ struct KidModeView: View {
                 HStack {
                     Text("🍕 Pizza Party").font(.rounded(14, weight: .bold)).foregroundStyle(Kid.inkSoft)
                     Spacer()
+                    stickerBoardButton
                     exitButton
                 }
                 Group {
@@ -426,7 +503,13 @@ struct KidModeView: View {
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             bigButton(isLast ? "It's ready! 🎉" : "I did it! ✓") {
                 Haptics.success(); popConfetti()
-                if isLast { withAnimation { phase = .celebrate } }
+                if isLast {
+                    if let p = pizza, let sticker = KidStickerLibrary.sticker(for: p) {
+                        justEarnedSticker = KidStickerStore.award(sticker.id) ? sticker : nil
+                        earnedStickers = KidStickerStore.earned()
+                    }
+                    withAnimation { phase = .celebrate }
+                }
                 else { withAnimation { stepPage += 1 } }
             }
             ScrollView(showsIndicators: false) {
@@ -559,22 +642,42 @@ struct KidModeView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                Text("YOU MADE PIZZA!").font(.rounded(30, weight: .bold)).foregroundStyle(Kid.tomatoDk)
+
+                let reaction = KidReactions.forPizza(pizza)
+                Text(reaction.headline).font(.rounded(30, weight: .bold)).foregroundStyle(Kid.tomatoDk)
                     .multilineTextAlignment(.center)
-                Text("You're a real pizza chef now.").font(.rounded(16, weight: .medium)).foregroundStyle(Kid.ink)
-                HStack(spacing: 10) {
-                    ForEach(["⭐", "🍕", "👩‍🍳", "🏅"], id: \.self) { s in
-                        Text(s).font(.system(size: 24))
+                Text(reaction.line).font(.rounded(16, weight: .medium)).foregroundStyle(Kid.ink)
+                    .multilineTextAlignment(.center)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 46), spacing: 10)], spacing: 10) {
+                    ForEach(KidStickerLibrary.all.filter { earnedStickers.contains($0.id) }) { s in
+                        let isNew = s.id == justEarnedSticker?.id
+                        Text(s.emoji).font(.system(size: 24))
                             .frame(width: 46, height: 46)
                             .background(Circle().fill(.white))
-                            .overlay(Circle().stroke(Kid.sunny, lineWidth: 2))
+                            .overlay(Circle().stroke(isNew ? Kid.tomato : Kid.sunny, lineWidth: isNew ? 3 : 2))
                     }
                 }
-                Text("+1 sticker for your collection!").font(.rounded(13, weight: .bold)).foregroundStyle(Kid.inkSoft)
+                .frame(maxWidth: 280)
+
+                if let new = justEarnedSticker {
+                    Text("🎉 NEW STICKER: \(new.name)!").font(.rounded(14, weight: .bold)).foregroundStyle(Kid.tomatoDk)
+                } else {
+                    Text("\(earnedStickers.count) of \(KidStickerLibrary.all.count) stickers collected").font(.rounded(13, weight: .bold)).foregroundStyle(Kid.inkSoft)
+                }
+
+                Button {
+                    Haptics.tap()
+                    showStickerBoard = true
+                } label: {
+                    Text("See my stickers 🎟️").font(.rounded(14, weight: .bold)).foregroundStyle(Kid.tomato)
+                }
+                .buttonStyle(.plain)
 
                 bigButton("Make another! 🔁", color: Kid.tomato) {
                     Haptics.tap()
                     pizza = nil
+                    justEarnedSticker = nil
                     withAnimation { phase = .pick }
                 }
                 .padding(.horizontal, 20).padding(.top, 6)

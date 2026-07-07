@@ -251,6 +251,85 @@ enum KidRecipe {
     }
 }
 
+// MARK: - Mascot reactions
+
+/// A short, pizza-specific reaction from the chef mascot at the celebration
+/// screen — same base art/video every time (no way to generate new
+/// illustrations here), but the words react to what actually got built.
+struct KidReaction {
+    let headline: String
+    let line: String
+}
+
+enum KidReactions {
+    private static let byID: [String: KidReaction] = [
+        "cheese":  KidReaction(headline: "Cheesy perfection!", line: "Melty, gooey, and simple — just how pizza started."),
+        "pep":     KidReaction(headline: "Pepperoni power!", line: "A classic done right. Chef's kiss! 👨‍🍳"),
+        "hawaii":  KidReaction(headline: "Aloha, pizza!", line: "Sweet and salty — a bold combo, and you nailed it."),
+        "marg":    KidReaction(headline: "Molto bene!", line: "Simple, fresh, and delizioso — the OG pizza."),
+        "veggie":  KidReaction(headline: "Rainbow power!", line: "Veggies never looked this good."),
+        "nutella": KidReaction(headline: "Sweet tooth champion!", line: "Dessert pizza — unlocked."),
+        "dino":    KidReaction(headline: "RAWR-some!", line: "A prehistoric pizza legend has entered the building."),
+    ]
+    private static let custom = KidReaction(headline: "You invented something new!", line: "Nobody's ever made THIS exact pizza before.")
+    private static let fallback = KidReaction(headline: "YOU MADE PIZZA!", line: "You're a real pizza chef now.")
+
+    static func forPizza(_ pizza: KidPizza?) -> KidReaction {
+        guard let pizza else { return fallback }
+        if pizza.custom { return custom }
+        return byID[pizza.id] ?? fallback
+    }
+}
+
+// MARK: - Stickers
+
+/// One collectible sticker, earned by completing a pizza — one per preset,
+/// plus a shared bonus sticker for any make-your-own creation.
+struct KidSticker: Identifiable, Equatable {
+    let id: String
+    let emoji: String
+    let name: String
+}
+
+enum KidStickerLibrary {
+    static let all: [KidSticker] = [
+        KidSticker(id: "cheese",  emoji: "🧀", name: "Just Cheese"),
+        KidSticker(id: "pep",     emoji: "🍕", name: "Pepperoni"),
+        KidSticker(id: "hawaii",  emoji: "🍍", name: "Hawaiian"),
+        KidSticker(id: "marg",    emoji: "🌿", name: "Margherita"),
+        KidSticker(id: "veggie",  emoji: "🌈", name: "Rainbow Veggie"),
+        KidSticker(id: "nutella", emoji: "🍫", name: "Nutella & Banana"),
+        KidSticker(id: "dino",    emoji: "🦕", name: "Dino Pepperoni"),
+        KidSticker(id: "custom",  emoji: "✨", name: "Master Inventor"),
+    ]
+
+    /// The sticker a completed pizza earns — presets by id, any make-your-own
+    /// build shares the single "Master Inventor" sticker instead.
+    static func sticker(for pizza: KidPizza) -> KidSticker? {
+        let key = pizza.custom ? "custom" : pizza.id
+        return all.first { $0.id == key }
+    }
+}
+
+/// Persists which stickers have been earned — no numeric score anywhere,
+/// just a growing collection.
+enum KidStickerStore {
+    private static let key = "kidStickers.v1"
+    static func earned() -> Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
+    }
+    /// Records a sticker as earned. Returns true only the first time, so the
+    /// celebration can call out "New!" without repeating it on every replay.
+    @discardableResult
+    static func award(_ id: String) -> Bool {
+        var set = earned()
+        let isNew = !set.contains(id)
+        set.insert(id)
+        UserDefaults.standard.set(Array(set), forKey: key)
+        return isNew
+    }
+}
+
 // MARK: - Stores
 
 enum KidModeStore {
