@@ -103,6 +103,7 @@ struct KidModeView: View {
     @State private var earnedStickers: Set<String> = KidStickerStore.earned()
     @State private var justEarnedSticker: KidSticker? = nil
     @State private var showStickerBoard = false
+    @State private var showTrivia = false
 
     // Make-your-own selections
     @State private var bSauce = true
@@ -119,6 +120,9 @@ struct KidModeView: View {
         .onAppear { UIApplication.shared.isIdleTimerDisabled = true; KidAudio.activate() }
         .sheet(isPresented: $showStickerBoard) {
             KidStickerBoardView(earned: earnedStickers)
+        }
+        .sheet(isPresented: $showTrivia, onDismiss: { earnedStickers = KidStickerStore.earned() }) {
+            KidTriviaView(onFinish: { showTrivia = false })
         }
     }
 
@@ -172,6 +176,21 @@ struct KidModeView: View {
         .buttonStyle(.plain)
     }
 
+    private var triviaButton: some View {
+        Button {
+            Haptics.tap()
+            showTrivia = true
+        } label: {
+            Text("🧠")
+                .font(.rounded(15, weight: .bold))
+                .padding(.horizontal, 12).padding(.vertical, 11)
+                .background(Circle().fill(Kid.grapeSoft))
+                .overlay(Circle().stroke(Kid.grape, lineWidth: 1))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private func bigButton(_ title: String, color: Color = Kid.green, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
@@ -198,9 +217,10 @@ struct KidModeView: View {
         let saved = KidPizzaStore.load()
         return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                HStack {
+                HStack(spacing: 8) {
                     Text("🍕 Pizza Party").font(.rounded(14, weight: .bold)).foregroundStyle(Kid.inkSoft)
                     Spacer()
+                    triviaButton
                     stickerBoardButton
                     exitButton
                 }

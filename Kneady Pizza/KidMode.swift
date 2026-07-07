@@ -301,6 +301,7 @@ enum KidStickerLibrary {
         KidSticker(id: "nutella", emoji: "🍫", name: "Nutella & Banana"),
         KidSticker(id: "dino",    emoji: "🦕", name: "Dino Pepperoni"),
         KidSticker(id: "custom",  emoji: "✨", name: "Master Inventor"),
+        KidSticker(id: "quiz",    emoji: "🧠", name: "Quiz Whiz"),
     ]
 
     /// The sticker a completed pizza earns — presets by id, any make-your-own

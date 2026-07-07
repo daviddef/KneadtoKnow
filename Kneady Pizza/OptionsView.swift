@@ -212,6 +212,8 @@ struct GuidesView: View {
                      subtitle: "The usual pizza disasters — and how to dodge them.") { GotchasView() }
                 link(icon: "character.book.closed.fill", title: "Definitions",
                      subtitle: "Plain-English meanings for every baking term.") { DefinitionsView() }
+                link(icon: "questionmark.circle.fill", title: "Pizza history quiz",
+                     subtitle: "Real history, myths busted — how well do you know your styles?") { StyleHistoryQuizView() }
             }
             .padding(20)
         }
