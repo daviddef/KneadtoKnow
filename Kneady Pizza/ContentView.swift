@@ -980,6 +980,57 @@ struct ContentView: View {
                     .font(.rounded(13))
                     .foregroundStyle(Palette.textSoft)
 
+                Divider().overlay(Palette.textSoft.opacity(0.15))
+
+                if vm.input.flourPickerAvailable {
+                    Menu {
+                        ForEach(FlourType.allCases) { flour in
+                            Button {
+                                vm.selectFlour(flour)
+                            } label: {
+                                if flour == vm.input.flourType {
+                                    Label(flour.name, systemImage: "checkmark")
+                                } else {
+                                    Text(flour.name)
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Flour")
+                                    .font(.rounded(16))
+                                    .foregroundStyle(Palette.text)
+                                Text("Protein \(vm.input.flourType.proteinPct)")
+                                    .font(.rounded(12))
+                                    .foregroundStyle(Palette.textSoft)
+                            }
+                            Spacer()
+                            HStack(spacing: 4) {
+                                Text(vm.input.flourType.name)
+                                    .font(.rounded(14, weight: .semibold))
+                                    .foregroundStyle(Palette.accent)
+                                    .multilineTextAlignment(.trailing)
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.rounded(11, weight: .bold))
+                                    .foregroundStyle(Palette.textSoft)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+
+                    Text(vm.input.flourType.fermentNote)
+                        .font(.rounded(12))
+                        .foregroundStyle(Palette.textSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Text("Gluten-free mode uses your own GF blend instead of a named wheat flour.")
+                        .font(.rounded(12))
+                        .foregroundStyle(Palette.textSoft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
                 if vm.input.prefermentAvailable {
                     Divider().overlay(Palette.textSoft.opacity(0.15))
 

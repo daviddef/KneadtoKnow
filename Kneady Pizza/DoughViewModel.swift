@@ -333,6 +333,7 @@ final class DoughViewModel: ObservableObject {
             ("Hydration", pct(i.hydration)),
             ("Salt", pct(i.salt)),
         ]
+        if i.flourPickerAvailable { rows.append(("Flour", i.flourType.name)) }
         if i.oil > 0 { rows.append(("Olive oil", pct(i.oil))) }
         if i.honey > 0 { rows.append(("Honey", pct(i.honey))) }
         rows.append(("Fermentation", i.ferment.label))
@@ -625,6 +626,18 @@ final class DoughViewModel: ObservableObject {
             input.applyDefaults(of: style)
             input.ballCount = style.defaultCount   // e.g. focaccia → one pan
             pizzaSelection = [:]   // recipes differ per style
+        }
+        Haptics.select()
+    }
+
+    /// Switch flour: nudges hydration to reflect the new flour's baseline
+    /// pull on water, the same idea as re-seeding defaults on a style switch.
+    func selectFlour(_ flour: FlourType) {
+        let old = input.flourType
+        guard old != flour else { return }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            input.flourType = flour
+            input.applyFlourNudge(from: old, to: flour)
         }
         Haptics.select()
     }

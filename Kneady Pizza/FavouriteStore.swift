@@ -35,6 +35,7 @@ struct SavedRecipe: Codable {
     var binder: String? = nil
     var binderInBlend: Bool? = nil
     var hidePineapple: Bool? = nil
+    var flourType: String? = nil
 }
 
 /// An in-progress bake: the recipe snapshot plus which steps are ticked off.
@@ -146,7 +147,8 @@ extension DoughInput {
             tipsEnabled: tipsEnabled,
             glutenFree: glutenFree,
             binder: binder.rawValue,
-            binderInBlend: binderInBlend
+            binderInBlend: binderInBlend,
+            flourType: flourType.rawValue
         )
     }
 
@@ -181,6 +183,7 @@ extension DoughInput {
         i.glutenFree = r.glutenFree ?? false
         i.binder = r.binder.flatMap(BinderType.init) ?? .xanthan
         i.binderInBlend = r.binderInBlend ?? false
+        i.flourType = r.flourType.flatMap(FlourType.init) ?? .genericAP
         return i
     }
 }

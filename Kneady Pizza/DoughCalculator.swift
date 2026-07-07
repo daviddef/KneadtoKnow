@@ -117,6 +117,20 @@ struct DoughInput {
     /// the added binder so the dough doesn't turn gummy.
     var binderInBlend: Bool = false
 
+    /// Which wheat flour the baker is using — doesn't apply in gluten-free
+    /// mode, where a GF blend stands in instead.
+    var flourType: FlourType = .genericAP
+    /// Whether the flour picker makes sense right now.
+    var flourPickerAvailable: Bool { !glutenFree }
+
+    /// Nudges hydration by the difference in baseline pull-on-water between
+    /// two flours — additive, so it respects whatever's already dialled in
+    /// rather than resetting it outright.
+    mutating func applyFlourNudge(from old: FlourType, to new: FlourType) {
+        guard old != new else { return }
+        hydration = min(max(hydration + (new.hydrationNudge - old.hydrationNudge), 0.50), 0.95)
+    }
+
     // Adjustable baker's percentages (seeded from the style).
     var hydration: Double = PizzaStyle.neapolitan.hydration
     var salt: Double = PizzaStyle.neapolitan.salt
