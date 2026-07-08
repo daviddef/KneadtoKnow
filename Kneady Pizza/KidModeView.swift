@@ -143,18 +143,16 @@ struct KidModeView: View {
             Haptics.tap()
             vm.kidMode = false
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "person.fill")
-                Text("Grown-ups")
-            }
-            .font(.rounded(15, weight: .bold))
-            .foregroundStyle(Kid.inkSoft)
-            .padding(.horizontal, 16).padding(.vertical, 11)
-            .background(Capsule().fill(.white))
-            .overlay(Capsule().stroke(Kid.inkSoft.opacity(0.25), lineWidth: 1))
-            .contentShape(Capsule())
+            Image(systemName: "person.fill")
+                .font(.rounded(15, weight: .bold))
+                .foregroundStyle(Kid.inkSoft)
+                .padding(11)
+                .background(Circle().fill(.white))
+                .overlay(Circle().stroke(Kid.inkSoft.opacity(0.25), lineWidth: 1))
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Grown-ups")
     }
 
     private var stickerBoardButton: some View {
