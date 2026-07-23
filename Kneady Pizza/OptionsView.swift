@@ -248,6 +248,7 @@ struct GuidesView: View {
 struct SettingsView: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
+    @ObservedObject private var monetization = Monetization.shared
     var onReintro: () -> Void = {}
 
     var body: some View {
@@ -274,6 +275,9 @@ struct SettingsView: View {
                     .softCard()
                 }
                 .buttonStyle(.plain)
+
+                // Remove ads
+                removeAdsCard
 
                 // Units
                 VStack(alignment: .leading, spacing: 10) {
@@ -362,6 +366,68 @@ struct SettingsView: View {
         .background(Palette.background.ignoresSafeArea())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// One-time "Remove Ads" purchase, with a Restore option. Hidden entirely
+    /// once owned (replaced by a small thank-you), so it never nags.
+    @ViewBuilder private var removeAdsCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("ADS")
+                .font(.rounded(12, weight: .bold))
+                .foregroundStyle(Palette.textSoft)
+
+            if monetization.adsRemoved {
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.seal.fill").foregroundStyle(Palette.sage)
+                    Text("Ads are off — thanks for the support!")
+                        .font(.rounded(14, weight: .medium)).foregroundStyle(Palette.text)
+                }
+            } else {
+                Text("A single small banner appears on the main screen — never while cooking, and never in Kid Mode. Remove it for good with a one-time purchase.")
+                    .font(.rounded(12)).foregroundStyle(Palette.textSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Task { await monetization.purchaseRemoveAds() }
+                } label: {
+                    HStack(spacing: 8) {
+                        if monetization.purchaseInFlight {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "nosign")
+                        }
+                        Text(removeAdsButtonTitle)
+                    }
+                    .font(.rounded(16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.accent))
+                }
+                .buttonStyle(.plain)
+                .disabled(monetization.removeAdsProduct == nil || monetization.purchaseInFlight)
+                .opacity(monetization.removeAdsProduct == nil ? 0.5 : 1)
+
+                Button {
+                    Task { await monetization.restore() }
+                } label: {
+                    Text("Restore purchase")
+                        .font(.rounded(13, weight: .semibold))
+                        .foregroundStyle(Palette.accent)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .softCard()
+    }
+
+    private var removeAdsButtonTitle: String {
+        if let price = monetization.removeAdsProduct?.displayPrice {
+            return "Remove Ads · \(price)"
+        }
+        return "Remove Ads"
     }
 }
 

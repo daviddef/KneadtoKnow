@@ -179,6 +179,11 @@ struct ContentView: View {
                     .onPreferenceChange(SectionOffsetKey.self) { offsets in
                         updateCurrentSection(offsets)
                     }
+                    // A single discreet banner, anchored below the scroll. Shows
+                    // only here on the main screen — never in Kid Mode or the
+                    // landscape cooking view (both route away from portraitContent)
+                    // — and vanishes once "Remove Ads" is purchased.
+                    AdBanner()
                 }
             }
 

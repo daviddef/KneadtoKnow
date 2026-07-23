@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2C3237DC3C15881F92775154 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3A25EEF34FE48BA607E7A8E /* Foundation.framework */; };
+		47BB7B55AEFB54CF5AB7DF80 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 391612C44CB5CD6E342ECE90 /* GoogleMobileAds */; };
 		51BB24E92CA419838B0C8F2E /* BakeActivityAttributes.swift (shared) in Sources */ = {isa = PBXBuildFile; fileRef = 88475228266D0E4F5CA2EEC3 /* BakeActivityAttributes.swift (shared) */; };
 		52C685B8F5ADCA62BB3675A1 /* Kneady Pizza Widgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 78C0CD679CA64D14AF4C32AF /* Kneady Pizza Widgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8DF6A48D8C5E6CCBF6A9735A /* KneadyPizzaWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD47A6CE5520EAD9E922B3B8 /* KneadyPizzaWidgetsBundle.swift */; };
@@ -67,6 +68,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47BB7B55AEFB54CF5AB7DF80 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -149,6 +151,9 @@
 				1A000000000000000000000F /* Kneady Pizza */,
 			);
 			name = "Kneady Pizza";
+			packageProductDependencies = (
+				391612C44CB5CD6E342ECE90 /* GoogleMobileAds */,
+			);
 			productName = "Kneady Pizza";
 			productReference = 1A0000000000000000000004 /* Kneady Pizza.app */;
 			productType = "com.apple.product-type.application";
@@ -195,6 +200,9 @@
 			);
 			mainGroup = 1A0000000000000000000002;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4C5D9805BAE15880771637D2 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			productRefGroup = 1A0000000000000000000003 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -371,6 +379,7 @@
 				DEVELOPMENT_TEAM = L9SAXP2E2W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Kneady Pizza";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kneady Pizza uses your location to fetch the current temperature, so it can time your dough's rise to your kitchen.";
@@ -404,6 +413,7 @@
 				DEVELOPMENT_TEAM = L9SAXP2E2W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Kneady Pizza";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kneady Pizza uses your location to fetch the current temperature, so it can time your dough's rise to your kitchen.";
@@ -509,6 +519,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4C5D9805BAE15880771637D2 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		391612C44CB5CD6E342ECE90 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C5D9805BAE15880771637D2 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1A0000000000000000000001 /* Project object */;
 }

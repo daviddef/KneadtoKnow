@@ -77,7 +77,7 @@ MADE TO ENJOY
 • Gluten-free mode with the right hydration and binders.
 • Friendly tips, facts and the odd terrible pizza joke along the way.
 
-Works offline. No account, no ads, no tracking. Just better pizza.
+Works offline, no account needed. A single discreet banner on the main screen helps support development — never while you're cooking, and never in Kid Mode. Prefer it gone? Remove ads for good with a one-time purchase.
 
 Yeast amounts and timings are well-grounded estimates, not laws — trust your dough and adjust to taste.
 ```
@@ -121,18 +121,26 @@ Buon appetito! 🍕
 
 ## 3. App Privacy ("App Privacy" section → "Get Started")
 
-**Data collection: minimal.** The app stores everything on-device. The only thing that leaves the device is your coordinate, sent once to the free Open-Meteo weather API to read the current temperature. No accounts, analytics, ads or third-party trackers.
+> ⚠️ **This section CHANGED with ads.** The app now includes the Google Mobile Ads SDK (AdMob).
+> Even though ads are **non-personalized** (no IDFA, no ATT prompt) and Kid Mode is entirely
+> ad-free, the SDK still collects some data for ad delivery, so the declaration is no longer
+> "location only." Getting this wrong is a review-blocking issue — fill it in per below.
 
 Answer the questionnaire:
 
-- **Do you collect data?** → Yes (because location is sent to a third-party API).
-- **Location → Precise Location**
-  - Used for: **App Functionality**
-  - Linked to the user's identity? **No**
-  - Used for tracking? **No**
+- **Do you collect data?** → **Yes.**
+- **Location → Precise Location** — Used for: **App Functionality** · Linked to identity? **No** · Tracking? **No** *(sent once to the free Open-Meteo weather API to read the temperature; optional — user can type it by hand)*.
+- **Identifiers → Device ID** — Used for: **Third-Party Advertising** · Linked? **No** · Tracking? **No** *(AdMob, for non-personalized ad delivery / frequency capping / fraud prevention)*.
+- **Usage Data → Product Interaction** and **Advertising Data** — Used for: **Third-Party Advertising** · Linked? **No** · Tracking? **No** *(AdMob).*
+- **Purchases → Purchase History** — Used for: **App Functionality** · Linked? **No** · Tracking? **No** *(the one-time Remove Ads purchase, handled by StoreKit/Apple).*
 - **Everything else:** not collected.
 
-(If you prefer, you can also note that location is optional — the user can type the temperature by hand.)
+> **On "tracking":** because ads are non-personalized (the app passes `npa=1` and never shows Apple's
+> App Tracking Transparency prompt), answer **No** to tracking for every item — the app does not link
+> data with third-party data for cross-app targeting. This matches the bundled `PrivacyInfo.xcprivacy`
+> (`NSPrivacyTracking = false`). If you ever switch to **personalized** ads, you must add the ATT
+> prompt (`NSUserTrackingUsageDescription`), flip these to "used for tracking," and re-file this
+> declaration.
 
 ---
 
@@ -149,7 +157,14 @@ Answer the questionnaire:
   bundle ID `com.daviddefranceski.kneadypizza.widgets`) purely to power the Live Activity — it has no
   Home Screen widget, no separate UI of its own, and needs no extra App Store Connect setup beyond the
   main app record.
-- **Price:** Free (Tier 0) unless you intend to charge.
+- **Price:** Free (Tier 0). Monetized by a single discreet banner ad (AdMob).
+- **In-App Purchase — you must create this in App Store Connect before submitting:**
+  - Type: **Non-Consumable** · Reference name: **Remove Ads** · Product ID: **`com.daviddefranceski.kneadypizza.removeads`** (must match exactly — the app looks it up by this ID) · Price: your choice (the app shows whatever price you set).
+  - Until this product exists and is "Ready to Submit," the in-app "Remove Ads" button shows no price and is disabled — that's expected, not a bug.
+- **AdMob before going live:**
+  - App ID `ca-app-pub-4156851882993001~3901671814` is already in `Config/Info.plist`.
+  - The banner currently uses **Google's test ad unit ID** (`AdConfig.swift`) — it shows "Test mode" ads and earns nothing. **Create a real banner ad unit in the AdMob console and paste its ID** (the `…/…` slash form) into `AdConfig.bannerUnitID` before release. ⚠️ Never tap a *real* ad during your own testing — Google flags that as invalid traffic.
+  - The SDK logs "12 SKAdNetwork identifiers missing" — attribution-only, not a blocker. For full coverage, paste Google's current list from developers.google.com/admob/ios/download over the `SKAdNetworkItems` array in `Config/Info.plist`.
 - **Availability:** all territories (or restrict if you like).
 - **Export compliance:** the app sets `ITSAppUsesNonExemptEncryption = NO`, so you won't be asked the encryption questions.
 
@@ -162,7 +177,7 @@ Answer the questionnaire:
 | Sign-in required? | **No** |
 | Demo account | Not needed |
 | Contact | your name, email, phone |
-| **Notes** | "No login required. The app works fully offline. Location and notifications are both optional and only enhance the experience: Location fetches the current temperature from the free Open-Meteo API (no key) to time the dough; Notifications give optional step reminders and only fire while a bake is actively in progress. To see the full flow: complete the short onboarding. Picking 'I am a Villager' gives the simplest experience — always a Cold Proof, no need to set a serve time. 'Sunday Pizzaiolo' or 'Roman Soldier' let you pick the proof style and an exact serve time. Then open Cooking Directions. Rotate to landscape for the step-by-step cooking mode (swipe between steps, double-tap to complete), or tap a step to read it full-screen. **NEW IN THIS BUILD** — Several additions on top of 1.2's initial release: (1) A Live Activity — tap 'Start baking now' on the Cooking Directions screen to begin a bake, and a Lock Screen / Dynamic Island activity appears showing the current step and a live countdown to the next one; it ends automatically once every step is ticked off or the bake is cancelled. This is powered by a small bundled App Extension (no separate UI, no Home Screen widget) and needs no account or setup. (2) Under the menu's 'Guides & Info', two new entries: a water-temperature (DDT) calculator, and a 21-question pizza history quiz. (3) A flour-type picker in the 'Yeast or starter' section (only shown outside Simple mode). (4) In Kid Mode: a sticker board and a short trivia round, both reachable from the 'Pick your pizza!' screen header. None of this adds any data collection, accounts, or external links. **NEW IN 1.2** — Quality and clarity fixes: Villager mode is now genuinely simpler (always Cold Proof, no serve-time question, and every step shows how far into the plan you are — e.g. '+18h' — instead of a clock time). Focaccia's instructions and kit list now speak to focaccia specifically instead of generic pizza wording, and call out the exact pan size needed so the wrong pan doesn't spoil the bake. Fixed a Dark Mode contrast issue in the landscape cooking view where some card text was hard to read. **NEW IN 1.1** — Kid Mode: turn it on from the menu (top-left ≡ icon → MODE → 'Kid') or during first-run onboarding ('I am a Kid'). It's an optional, playful mode for cooking pizza with children — big text, short looping video demonstrations of each step, jokes and confetti. It collects no data, has no ads, no in-app purchases and no external links or social features. The final 'into the oven' step is explicitly labelled for a grown-up and includes a prominent 'Grown-ups' button back to the full app. This is a general Food & Drink app with an optional kid-friendly sub-mode, not an app primarily directed at children." |
+| **Notes** | "No login required. The app works fully offline. Location and notifications are both optional and only enhance the experience: Location fetches the current temperature from the free Open-Meteo API (no key) to time the dough; Notifications give optional step reminders and only fire while a bake is actively in progress. To see the full flow: complete the short onboarding. Picking 'I am a Villager' gives the simplest experience — always a Cold Proof, no need to set a serve time. 'Sunday Pizzaiolo' or 'Roman Soldier' let you pick the proof style and an exact serve time. Then open Cooking Directions. Rotate to landscape for the step-by-step cooking mode (swipe between steps, double-tap to complete), or tap a step to read it full-screen. **ADS & PURCHASES** — The app shows a single non-personalized banner ad (AdMob) at the bottom of the main screen only. It never appears while cooking (the full-screen step views and landscape cooking mode) and NEVER in Kid Mode — the entire children's flow is ad-free by design. Ads are non-personalized, so the app does not present the App Tracking Transparency prompt. A one-time 'Remove Ads' In-App Purchase (Non-Consumable, in Settings) hides the banner permanently, with a Restore option. **NEW IN THIS BUILD** — Several additions on top of 1.2's initial release: (1) A Live Activity — tap 'Start baking now' on the Cooking Directions screen to begin a bake, and a Lock Screen / Dynamic Island activity appears showing the current step and a live countdown to the next one; it ends automatically once every step is ticked off or the bake is cancelled. This is powered by a small bundled App Extension (no separate UI, no Home Screen widget) and needs no account or setup. (2) Under the menu's 'Guides & Info', two new entries: a water-temperature (DDT) calculator, and a 21-question pizza history quiz. (3) A flour-type picker in the 'Yeast or starter' section (only shown outside Simple mode). (4) In Kid Mode: a sticker board and a short trivia round, both reachable from the 'Pick your pizza!' screen header. None of this adds any data collection, accounts, or external links. **NEW IN 1.2** — Quality and clarity fixes: Villager mode is now genuinely simpler (always Cold Proof, no serve-time question, and every step shows how far into the plan you are — e.g. '+18h' — instead of a clock time). Focaccia's instructions and kit list now speak to focaccia specifically instead of generic pizza wording, and call out the exact pan size needed so the wrong pan doesn't spoil the bake. Fixed a Dark Mode contrast issue in the landscape cooking view where some card text was hard to read. **NEW IN 1.1** — Kid Mode: turn it on from the menu (top-left ≡ icon → MODE → 'Kid') or during first-run onboarding ('I am a Kid'). It's an optional, playful mode for cooking pizza with children — big text, short looping video demonstrations of each step, jokes and confetti. It collects no data, has no ads, no in-app purchases and no external links or social features. The final 'into the oven' step is explicitly labelled for a grown-up and includes a prominent 'Grown-ups' button back to the full app. This is a general Food & Drink app with an optional kid-friendly sub-mode, not an app primarily directed at children." |
 
 ---
 
