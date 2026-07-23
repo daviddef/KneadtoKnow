@@ -1,7 +1,7 @@
 # Kneady Pizza — App Store submission pack
 
 App: **Kneady Pizza** · Bundle ID `com.daviddefranceski.kneadypizza` · Team `L9SAXP2E2W`
-Version **1.3** · Build **42** (iPhone-only) · Primary language: English (Australia or US — pick one below)
+Version **1.3** · Build **43** (iPhone-only) · Primary language: English (Australia or US — pick one below)
 
 > ⚠️ **1.2 is already live** (all the feature work — quiz, Kid Mode, flour picker, DDT, poke
 > test, Live Activity — shipped in 1.2). **This release is 1.3**, and its ONLY user-facing change
@@ -144,13 +144,13 @@ Answer the questionnaire:
 
 ## 4. Build, pricing, availability
 
-- **Build:** **1.3 (42)** — archived and uploaded via CLI on 8 Jul 2026 (no Organizer needed — see the
+- **Build:** **1.3 (43)** — archived and uploaded via CLI on 8 Jul 2026 (no Organizer needed — see the
   release-workflow memory for the full archive → export → `xcrun altool --upload-app` pipeline). Contains
   everything in builds 39–41: the Villager/focaccia/Dark Mode fixes, a preferment-hydration correctness
   fix, direct numeric entry, the DDT (water temperature) calculator, an illustrated poke-test guide, a
   Live Activity for the active bake (new "Kneady Pizza Widgets" extension — see note below), a
   seven-preset flour-type picker, a pizza history quiz, and Kid Mode's new mascot reactions, sticker
-  board and trivia round. Select **1.3 (42)** here once it finishes processing (watch for the email).
+  board and trivia round. Select **1.3 (43)** here once it finishes processing (watch for the email).
 - **Note on the widget extension:** this build adds a small App Extension (`Kneady Pizza Widgets`,
   bundle ID `com.daviddefranceski.kneadypizza.widgets`) purely to power the Live Activity — it has no
   Home Screen widget, no separate UI of its own, and needs no extra App Store Connect setup beyond the
@@ -217,7 +217,7 @@ Ask Claude to drive the simulator and capture the full set if you'd rather not d
 3. Fill **App Information** (section 1) — name, subtitle, categories, content rights (unchanged since 1.0, but check they're still correct).
 4. In the **1.3 version page** fill: promotional text, description, keywords, what's new, support/marketing/privacy URLs, copyright (section 2).
 5. Upload **screenshots** (section 6) to each required size slot — `appstore/screenshots/kid-*.png` are ready.
-6. **Build:** already uploaded via CLI (section 4) — scroll to "Build", click **(＋)**, choose **1.3 (42)** once it's finished processing. (Answer export-compliance if prompted — it won't be, given the plist flag.)
+6. **Build:** already uploaded via CLI (section 4) — scroll to "Build", click **(＋)**, choose **1.3 (43)** once it's finished processing. (Answer export-compliance if prompted — it won't be, given the plist flag.)
 7. **App Privacy** (section 3) — re-check the questionnaire is still accurate (no new data collection in 1.2) and **Publish**.
 8. Set **Pricing and Availability** (section 4).
 9. **App Review Information** (section 5) — make sure the 1.2 and Kid Mode notes are both included.
