@@ -7,6 +7,7 @@ import SwiftUI
 struct MenuDrawer: View {
     @ObservedObject var vm: DoughViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
+    @ObservedObject private var monetization = Monetization.shared
     var onClose: () -> Void
     var onReintro: () -> Void = {}
 
@@ -138,6 +139,35 @@ struct MenuDrawer: View {
                     }
                     .padding(18)
                     .softCard()
+
+                    // Remove Ads — a direct one-tap purchase in the menu, shown
+                    // only while ads are still on. (Also lives inside Settings.)
+                    if monetization.canBuyRemoveAds {
+                        Button {
+                            Task { await monetization.purchaseRemoveAds() }
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "nosign").foregroundStyle(Palette.accent).frame(width: 24)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Remove Ads").font(.rounded(16, weight: .semibold)).foregroundStyle(Palette.text)
+                                    Text("Hide the banner for good — a one-time purchase.")
+                                        .font(.rounded(12)).foregroundStyle(Palette.textSoft)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer()
+                                if monetization.purchaseInFlight {
+                                    ProgressView()
+                                } else if let price = monetization.removeAdsProduct?.displayPrice {
+                                    Text(price).font(.rounded(15, weight: .bold)).foregroundStyle(Palette.accent)
+                                }
+                            }
+                            .padding(18)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .softCard()
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(monetization.purchaseInFlight)
+                    }
 
                     menuLink(icon: "slider.horizontal.3",
                              title: "Settings",
